@@ -54,6 +54,10 @@ type ImageRequestQueueItem  = Cancelable & {
     innerRequest?: Cancelable;
 }
 
+type ImageQueueThrottleCallbackDictionary = {
+    [Key: string]: ImageQueueThrottleControlCallback;
+}
+
 /**
  * An error thrown when a HTTP request results in an error response.
  * @extends Error
@@ -299,18 +303,18 @@ export type ImageQueueThrottleControlCallback = () => boolean;
  * use a lambda function to determine when the queue should be throttled (e.g. when isMoving())
  * and manually calling {@link processQueue} in the render loop.
  */
-namespace ImageRequestQueue {
-    let imageQueue : ImageRequestQueueItem[] = [];
+namespace ImageRequestQueueManager {
+    let imageRequestQueue : ImageRequestQueueItem[] = [];
     let currentParallelImageRequests = 0;
 
     let throttleControlCallbackHandleCounter: number = 0;
-    const throttleControlCallbacks = {};
+    const throttleControlCallbacks: ImageQueueThrottleCallbackDictionary = {};
 
     /**
      * Reset the image request queue, removing all pending requests.
      */
-    export function resetImageRequestQueue(): void {
-        imageQueue = [];
+    export function resetRequestQueue(): void {
+        imageRequestQueue = [];
         currentParallelImageRequests = 0;
     }
 
@@ -322,7 +326,7 @@ namespace ImageRequestQueue {
      */
     export function installThrottleControlCallback(callback: ImageQueueThrottleControlCallback): number /*callbackHandle*/ {
         const handle = throttleControlCallbackHandleCounter++;
-        throttleControlCallbacks[handle] = callback;
+        throttleControlCallbacks[handle.toString()] = callback;
         return handle;
     }
 
@@ -332,7 +336,7 @@ namespace ImageRequestQueue {
      * @param {number} callbackHandle The handle for the callback to remove.
      */
     export function removeThrottleControlCallback(callbackHandle: number): void {
-        delete throttleControlCallbacks[callbackHandle];
+        delete throttleControlCallbacks[callbackHandle.toString()];
     }
 
     /**
@@ -373,10 +377,10 @@ namespace ImageRequestQueue {
                 }
             }
         };
-        this.imageQueue.push(queued);
+        imageRequestQueue.push(queued);
 
-        if (!this.isThrottled()) {
-            this.processQueue(config.MAX_PARALLEL_IMAGE_REQUESTS);
+        if (!isThrottled()) {
+            processQueue(config.MAX_PARALLEL_IMAGE_REQUESTS);
         }
 
         return queued;
@@ -422,7 +426,7 @@ namespace ImageRequestQueue {
         maxImageRequests: number = 0): number {
 
         if (!maxImageRequests) {
-            maxImageRequests = Math.max(0, this.isThrottled() ? config.MAX_PARALLEL_IMAGE_REQUESTS_PER_FRAME_WHILE_THROTTLED : config.MAX_PARALLEL_IMAGE_REQUESTS);
+            maxImageRequests = Math.max(0, isThrottled() ? config.MAX_PARALLEL_IMAGE_REQUESTS_PER_FRAME_WHILE_THROTTLED : config.MAX_PARALLEL_IMAGE_REQUESTS);
         }
 
         const cancelRequest = (request: ImageRequestQueueItem) => {
@@ -439,15 +443,15 @@ namespace ImageRequestQueue {
 
         // limit concurrent image loads to help with raster sources performance on big screens
 
-        for (let numImageRequests = currentParallelImageRequests; numImageRequests < maxImageRequests && imageQueue.length; numImageRequests++) {
+        for (let numImageRequests = currentParallelImageRequests; numImageRequests < maxImageRequests && imageRequestQueue.length; numImageRequests++) {
 
-            const nextItemInQueue: ImageRequestQueueItem = this.imageQueue.shift();
+            const nextItemInQueue: ImageRequestQueueItem = imageRequestQueue.shift();
 
             if (nextItemInQueue.cancelled) {
                 continue;
             }
 
-            const innerRequest = this.doArrayRequest(nextItemInQueue);
+            const innerRequest = doArrayRequest(nextItemInQueue);
 
             currentParallelImageRequests++;
 
@@ -455,7 +459,7 @@ namespace ImageRequestQueue {
             nextItemInQueue.cancel = () => cancelRequest(nextItemInQueue);
         }
 
-        return this.imageQueue.length;
+        return imageRequestQueue.length;
     }
 }
 
@@ -463,10 +467,8 @@ namespace ImageRequestQueue {
  * Reset the image request queue, removing all pending requests.
  */
 export function resetImageRequestQueue(): void {
-    ImageRequestQueue.resetImageRequestQueue();
+    ImageRequestQueueManager.resetRequestQueue();
 }
-
-//export const resetImageRequestQueue = (): void => imageQueue.resetImageRequestQueue();
 
 resetImageRequestQueue();
 
@@ -477,7 +479,7 @@ resetImageRequestQueue();
  * @returns {number} handle that identifies the installed callback.
  */
 export function installImageQueueThrottleControlCallback(callback: ImageQueueThrottleControlCallback): number {
-    return ImageRequestQueue.installThrottleControlCallback(callback);
+    return ImageRequestQueueManager.installThrottleControlCallback(callback);
 }
 
 /**
@@ -486,7 +488,7 @@ export function installImageQueueThrottleControlCallback(callback: ImageQueueThr
  * @param {number} callbackHandle The handle of the previously installed callback to remove.
  */
 export function removeImageQueueThrottleControlCallback(callbackHandle: number): void {
-    ImageRequestQueue.removeThrottleControlCallback(callbackHandle);
+    ImageRequestQueueManager.removeThrottleControlCallback(callbackHandle);
 }
 
 /**
@@ -495,7 +497,7 @@ export function removeImageQueueThrottleControlCallback(callbackHandle: number):
  * @returns {boolean} true if any callback is causing the queue to be throttled.
  */
 export function isImageQueueThrottled(): boolean {
-    return ImageRequestQueue.isThrottled();
+    return ImageRequestQueueManager.isThrottled();
 }
 
 /**
@@ -508,7 +510,7 @@ export function getImage(
     requestParameters: RequestParameters,
     callback: GetImageCallback
 ): Cancelable {
-    return ImageRequestQueue.getImage(requestParameters, callback);
+    return ImageRequestQueueManager.getImage(requestParameters, callback);
 }
 
 /**
@@ -517,7 +519,7 @@ export function getImage(
  * @returns {number} The number of items remaining in the queue.
  */
 export function processImageRequestQueue(maxImageRequests: number = 0): number {
-    return ImageRequestQueue.processQueue(maxImageRequests);
+    return ImageRequestQueueManager.processQueue(maxImageRequests);
 }
 
 export const getVideo = function(urls: Array<string>, callback: Callback<HTMLVideoElement>): Cancelable {
