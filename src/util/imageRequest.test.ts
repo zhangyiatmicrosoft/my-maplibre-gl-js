@@ -13,7 +13,7 @@ import ImageRequest from './imageRequest';
 
 import {readAsText} from './ajax.test';
 
-describe('imageRequest', () => {
+describe('ImageRequest', () => {
     let server: FakeServer;
     beforeEach(() => {
         global.fetch = null;

@@ -34,16 +34,20 @@ describe('test min build', () => {
     });
 
     test('bundle size stays the same', async () => {
-        const bytes = (await fs.promises.stat('dist/maplibre-gl.js')).size;
+        const actualBytes = (await fs.promises.stat('dist/maplibre-gl.js')).size;
 
-        // Base is 754k.
         // Need to be very frugal when it comes to minified script.
         // Most changes should result in 0.5k variation.
-        const delta = 500;
+        const increaseQuota = 500;
+
+        // decrease can mean optimizations, so more generious but still
+        // need to make sure not a big bug that results in a big change.
+        const decreaseQuota = 1000;
 
         // feel free to update this value after you've checked that it has changed on purpose :-)
         const expectedBytes = 754929;
 
-        expect(Math.abs(bytes - expectedBytes)).toBeLessThan(delta);
+        expect(actualBytes - expectedBytes).toBeLessThan(increaseQuota);
+        expect(expectedBytes - actualBytes).toBeLessThan(decreaseQuota);
     });
 });
