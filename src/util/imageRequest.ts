@@ -11,7 +11,7 @@ export type GetImageCallback = (error?: Error | null, image?: HTMLImageElement |
 
 type ImageQueueThrottleControlCallback = () => boolean;
 
-type ImageRequestQueueItem  = Cancelable & {
+export type ImageRequestQueueItem  = Cancelable & {
     requestParameters: RequestParameters;
     callback: GetImageCallback;
     cancelled: boolean;
@@ -32,16 +32,16 @@ type ImageQueueThrottleCallbackDictionary = {
  *
  * When the view of the map is moving dynamically, smoother frame rates can be achieved
  * by throttling the number of items processed by the queue per frame. This can be
- * accomplished by using {@link installThrottleControlCallback} to allow the caller to
+ * accomplished by using {@link addThrottleControl} to allow the caller to
  * use a lambda function to determine when the queue should be throttled (e.g. when isMoving())
  * and manually calling {@link processQueue} in the render loop.
  */
 namespace ImageRequest {
-    let imageRequestQueue : ImageRequestQueueItem[] = [];
-    let currentParallelImageRequests = 0;
+    let imageRequestQueue : ImageRequestQueueItem[];
+    let currentParallelImageRequests:number;
 
-    let throttleControlCallbackHandleCounter: number = 0;
-    const throttleControlCallbacks: ImageQueueThrottleCallbackDictionary = {};
+    let throttleControlCallbackHandleCounter: number;
+    let throttleControlCallbacks: ImageQueueThrottleCallbackDictionary;
 
     /**
      * Reset the image request queue, removing all pending requests.
@@ -49,6 +49,8 @@ namespace ImageRequest {
     export function resetRequestQueue(): void {
         imageRequestQueue = [];
         currentParallelImageRequests = 0;
+        throttleControlCallbackHandleCounter = 0;
+        throttleControlCallbacks = {};
     }
 
     /**
@@ -57,7 +59,7 @@ namespace ImageRequest {
      * @param {ImageQueueThrottleControlCallback} callback The callback function to install
      * @returns {number} handle that identifies the installed callback.
      */
-    export function installThrottleControlCallback(callback: ImageQueueThrottleControlCallback): number /*callbackHandle*/ {
+    export function addThrottleControl(callback: ImageQueueThrottleControlCallback): number /*callbackHandle*/ {
         const handle = throttleControlCallbackHandleCounter++;
         throttleControlCallbacks[handle.toString()] = callback;
         return handle;
@@ -65,10 +67,10 @@ namespace ImageRequest {
 
     /**
      * Remove a previously installed callback by passing in the handle returned
-     * by {@link installThrottleControlCallback}.
+     * by {@link addThrottleControl}.
      * @param {number} callbackHandle The handle for the callback to remove.
      */
-    export function removeThrottleControlCallback(callbackHandle: number): void {
+    export function removeThrottleControl(callbackHandle: number): void {
         delete throttleControlCallbacks[callbackHandle.toString()];
     }
 
@@ -77,9 +79,19 @@ namespace ImageRequest {
      * to be throttled.
      * @returns {boolean} true if any callback is causing the queue to be throttled.
      */
-    export function isThrottled(): boolean {
-        return Object.keys(throttleControlCallbacks).length > 0;
-    }
+    const isThrottled = (): boolean => {
+        const allControlKeys = Object.keys(throttleControlCallbacks);
+        let throttleingRequested = false;
+        if (allControlKeys.length > 0)        {
+            for (const key of allControlKeys) {
+                throttleingRequested = throttleControlCallbacks[key]();
+                if (throttleingRequested) {
+                    break;
+                }
+            }
+        }
+        return throttleingRequested;
+    };
 
     /**
      * Request to load an image.
@@ -90,7 +102,7 @@ namespace ImageRequest {
     export function getImage(
         requestParameters: RequestParameters,
         callback: GetImageCallback
-    ): Cancelable {
+    ): ImageRequestQueueItem {
         if (webpSupported.supported) {
             if (!requestParameters.headers) {
                 requestParameters.headers = {};
@@ -177,9 +189,8 @@ namespace ImageRequest {
                 request.cancelled = true;
                 request.innerRequest.cancel();
 
-                if (!isThrottled()) {
-                    processQueue();
-                }
+                // in the case of cancelling, it WILL move on
+                processQueue();
             }
         };
 

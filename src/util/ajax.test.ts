@@ -7,7 +7,7 @@ import {
 
 import {fakeServer, FakeServer} from 'nise';
 
-export function readAsText(blob) {
+function readAsText(blob) {
     return new Promise((resolve, reject) => {
         const fileReader = new FileReader();
         fileReader.onload = () => resolve(fileReader.result);

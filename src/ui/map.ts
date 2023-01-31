@@ -339,7 +339,9 @@ class Map extends Camera {
     _clickTolerance: number;
     _pixelRatio: number;
     _terrainDataCallback: (e: MapStyleDataEvent | MapSourceDataEvent) => void;
-    _imageQueueThrottleControlCallbackHandle: number;
+
+    /** image queue throttling handle. To be used later when clean up */
+    _imgQHandle: number;
 
     /**
      * The map's {@link ScrollZoomHandler}, which implements zooming in and out with a scroll wheel or trackpad.
@@ -434,7 +436,7 @@ class Map extends Camera {
         this._clickTolerance = options.clickTolerance;
         this._pixelRatio = options.pixelRatio ?? devicePixelRatio;
 
-        this._imageQueueThrottleControlCallbackHandle = ImageRequest.installThrottleControlCallback(() => this.isMoving());
+        this._imgQHandle = ImageRequest.addThrottleControl(() => this.isMoving());
 
         this._requestManager = new RequestManager(options.transformRequest);
 
@@ -2949,7 +2951,7 @@ class Map extends Camera {
             removeEventListener('online', this._onWindowOnline, false);
         }
 
-        ImageRequest.removeThrottleControlCallback(this._imageQueueThrottleControlCallbackHandle);
+        ImageRequest.removeThrottleControl(this._imgQHandle);
 
         const extension = this.painter.context.gl.getExtension('WEBGL_lose_context');
         if (extension) extension.loseContext();
