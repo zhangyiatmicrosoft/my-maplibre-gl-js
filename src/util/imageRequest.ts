@@ -24,11 +24,13 @@ type ImageQueueThrottleCallbackDictionary = {
 }
 
 /**
- * By default, the image queue will process requests as quickly as it can while limiting
+ * By default, the image queue is self driven, meaning as soon as one requested item is processed,
+ * it will move on to next one as quickly as it can while limiting
  * the number of concurrent requests to MAX_PARALLEL_IMAGE_REQUESTS. The default behavior
  * ensures that static views of the map can be rendered with minimal delay.
+ *
  * However, the default behavior can prevent dynamic views of the map from rendering
- * smoothly.
+ * smoothly in that many requests can finish in one render frame, putting too much pressure on GPU.
  *
  * When the view of the map is moving dynamically, smoother frame rates can be achieved
  * by throttling the number of items processed by the queue per frame. This can be
@@ -115,17 +117,14 @@ namespace ImageRequest {
             callback,
             cancelled: false,
             completed: false,
-            cancel() {
-                this.cancelled = true;
-                if (!isThrottled()) {
-                    processQueue(config.MAX_PARALLEL_IMAGE_REQUESTS);
-                }
-            }
+
+            // Just a place holder. The real one will be assigned during processQueue()
+            cancel: () => {}
         };
         imageRequestQueue.push(queued);
 
         if (!isThrottled()) {
-            processQueue(config.MAX_PARALLEL_IMAGE_REQUESTS);
+            processQueue();
         }
 
         return queued;
@@ -165,7 +164,7 @@ namespace ImageRequest {
                 currentParallelImageRequests--;
 
                 if (!isThrottled()) {
-                    processQueue(config.MAX_PARALLEL_IMAGE_REQUESTS);
+                    processQueue();
                 }
             }
         });
@@ -179,8 +178,8 @@ namespace ImageRequest {
     export function processQueue(
         maxImageRequests: number = 0): number {
 
-        if (!maxImageRequests) {
-            maxImageRequests = Math.max(0, isThrottled() ? config.MAX_PARALLEL_IMAGE_REQUESTS_PER_FRAME_WHILE_THROTTLED : config.MAX_PARALLEL_IMAGE_REQUESTS);
+        if (maxImageRequests <= 0) {
+            maxImageRequests = isThrottled() ? config.MAX_PARALLEL_IMAGE_REQUESTS_PER_FRAME_WHILE_THROTTLED : config.MAX_PARALLEL_IMAGE_REQUESTS;
         }
 
         const cancelRequest = (request: ImageRequestQueueItem) => {
@@ -196,20 +195,21 @@ namespace ImageRequest {
 
         // limit concurrent image loads to help with raster sources performance on big screens
 
-        for (let numImageRequests = currentParallelImageRequests; numImageRequests < maxImageRequests && imageRequestQueue.length; numImageRequests++) {
+        for (let numImageRequests = currentParallelImageRequests;
+            numImageRequests < maxImageRequests && imageRequestQueue.length > 0;
+            numImageRequests++) {
 
-            const nextItemInQueue: ImageRequestQueueItem = imageRequestQueue.shift();
-
-            if (nextItemInQueue.cancelled) {
+            const topItemInQueue: ImageRequestQueueItem = imageRequestQueue.shift();
+            if (topItemInQueue.cancelled) {
                 continue;
             }
 
-            const innerRequest = doArrayRequest(nextItemInQueue);
+            const innerRequest = doArrayRequest(topItemInQueue);
 
             currentParallelImageRequests++;
 
-            nextItemInQueue.innerRequest = innerRequest;
-            nextItemInQueue.cancel = () => cancelRequest(nextItemInQueue);
+            topItemInQueue.innerRequest = innerRequest;
+            topItemInQueue.cancel = () => cancelRequest(topItemInQueue);
         }
 
         return imageRequestQueue.length;
