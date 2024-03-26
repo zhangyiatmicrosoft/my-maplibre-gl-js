@@ -1709,7 +1709,7 @@ const makeRequest = function (requestParameters, abortController) {
             return protocolLoadFn(requestParameters, abortController);
         }
         if (isWorker(self) && self.worker && self.worker.actor) {
-            return self.worker.actor.sendAsync({ type: 'getResource', data: requestParameters, targetMapId: GLOBAL_DISPATCHER_ID }, abortController);
+            return self.worker.actor.sendAsync({ type: "GR" /* MessageType.getResource */, data: requestParameters, targetMapId: GLOBAL_DISPATCHER_ID }, abortController);
         }
     }
     if (!isFileURL(requestParameters.url)) {
@@ -1717,7 +1717,7 @@ const makeRequest = function (requestParameters, abortController) {
             return makeFetchRequest(requestParameters, abortController);
         }
         if (isWorker(self) && self.worker && self.worker.actor) {
-            return self.worker.actor.sendAsync({ type: 'getResource', data: requestParameters, mustQueue: true, targetMapId: GLOBAL_DISPATCHER_ID }, abortController);
+            return self.worker.actor.sendAsync({ type: "GR" /* MessageType.getResource */, data: requestParameters, mustQueue: true, targetMapId: GLOBAL_DISPATCHER_ID }, abortController);
         }
     }
     return makeXMLHttpRequest(requestParameters, abortController);
@@ -32659,21 +32659,21 @@ class WorkerTile {
             if (Object.keys(stacks).length) {
                 const abortController = new AbortController();
                 this.inFlightDependencies.push(abortController);
-                getGlyphsPromise = actor.sendAsync({ type: 'getGlyphs', data: { stacks, source: this.source, tileID: this.tileID, type: 'glyphs' } }, abortController);
+                getGlyphsPromise = actor.sendAsync({ type: "GG" /* MessageType.getGlyphs */, data: { stacks, source: this.source, tileID: this.tileID, type: 'glyphs' } }, abortController);
             }
             const icons = Object.keys(options.iconDependencies);
             let getIconsPromise = Promise.resolve({});
             if (icons.length) {
                 const abortController = new AbortController();
                 this.inFlightDependencies.push(abortController);
-                getIconsPromise = actor.sendAsync({ type: 'getImages', data: { icons, source: this.source, tileID: this.tileID, type: 'icons' } }, abortController);
+                getIconsPromise = actor.sendAsync({ type: "GI" /* MessageType.getImages */, data: { icons, source: this.source, tileID: this.tileID, type: 'icons' } }, abortController);
             }
             const patterns = Object.keys(options.patternDependencies);
             let getPatternsPromise = Promise.resolve({});
             if (patterns.length) {
                 const abortController = new AbortController();
                 this.inFlightDependencies.push(abortController);
-                getPatternsPromise = actor.sendAsync({ type: 'getImages', data: { icons: patterns, source: this.source, tileID: this.tileID, type: 'patterns' } }, abortController);
+                getPatternsPromise = actor.sendAsync({ type: "GI" /* MessageType.getImages */, data: { icons: patterns, source: this.source, tileID: this.tileID, type: 'patterns' } }, abortController);
             }
             const [glyphMap, iconMap, patternMap] = yield Promise.all([getGlyphsPromise, getIconsPromise, getPatternsPromise]);
             const glyphAtlas = new GlyphAtlas(glyphMap);
@@ -34909,37 +34909,37 @@ class Worker {
             }
             performance.rtlWorkerPlugin.setMethods(rtlTextPlugin);
         };
-        this.actor.registerMessageHandler('loadDEMTile', (mapId, params) => {
+        this.actor.registerMessageHandler("LDT" /* MessageType.loadDEMTile */, (mapId, params) => {
             return this._getDEMWorkerSource(mapId, params.source).loadTile(params);
         });
-        this.actor.registerMessageHandler('removeDEMTile', (mapId, params) => performance.__awaiter(this, void 0, void 0, function* () {
+        this.actor.registerMessageHandler("RDT" /* MessageType.removeDEMTile */, (mapId, params) => performance.__awaiter(this, void 0, void 0, function* () {
             this._getDEMWorkerSource(mapId, params.source).removeTile(params);
         }));
-        this.actor.registerMessageHandler('getClusterExpansionZoom', (mapId, params) => performance.__awaiter(this, void 0, void 0, function* () {
+        this.actor.registerMessageHandler("GCEZ" /* MessageType.getClusterExpansionZoom */, (mapId, params) => performance.__awaiter(this, void 0, void 0, function* () {
             return this._getWorkerSource(mapId, params.type, params.source).getClusterExpansionZoom(params);
         }));
-        this.actor.registerMessageHandler('getClusterChildren', (mapId, params) => performance.__awaiter(this, void 0, void 0, function* () {
+        this.actor.registerMessageHandler("GCC" /* MessageType.getClusterChildren */, (mapId, params) => performance.__awaiter(this, void 0, void 0, function* () {
             return this._getWorkerSource(mapId, params.type, params.source).getClusterChildren(params);
         }));
-        this.actor.registerMessageHandler('getClusterLeaves', (mapId, params) => performance.__awaiter(this, void 0, void 0, function* () {
+        this.actor.registerMessageHandler("GCL" /* MessageType.getClusterLeaves */, (mapId, params) => performance.__awaiter(this, void 0, void 0, function* () {
             return this._getWorkerSource(mapId, params.type, params.source).getClusterLeaves(params);
         }));
-        this.actor.registerMessageHandler('loadData', (mapId, params) => {
+        this.actor.registerMessageHandler("LD" /* MessageType.loadData */, (mapId, params) => {
             return this._getWorkerSource(mapId, params.type, params.source).loadData(params);
         });
-        this.actor.registerMessageHandler('loadTile', (mapId, params) => {
+        this.actor.registerMessageHandler("LT" /* MessageType.loadTile */, (mapId, params) => {
             return this._getWorkerSource(mapId, params.type, params.source).loadTile(params);
         });
-        this.actor.registerMessageHandler('reloadTile', (mapId, params) => {
+        this.actor.registerMessageHandler("RT" /* MessageType.reloadTile */, (mapId, params) => {
             return this._getWorkerSource(mapId, params.type, params.source).reloadTile(params);
         });
-        this.actor.registerMessageHandler('abortTile', (mapId, params) => {
+        this.actor.registerMessageHandler("AT" /* MessageType.abortTile */, (mapId, params) => {
             return this._getWorkerSource(mapId, params.type, params.source).abortTile(params);
         });
-        this.actor.registerMessageHandler('removeTile', (mapId, params) => {
+        this.actor.registerMessageHandler("RMT" /* MessageType.removeTile */, (mapId, params) => {
             return this._getWorkerSource(mapId, params.type, params.source).removeTile(params);
         });
-        this.actor.registerMessageHandler('removeSource', (mapId, params) => performance.__awaiter(this, void 0, void 0, function* () {
+        this.actor.registerMessageHandler("RS" /* MessageType.removeSource */, (mapId, params) => performance.__awaiter(this, void 0, void 0, function* () {
             if (!this.workerSources[mapId] ||
                 !this.workerSources[mapId][params.type] ||
                 !this.workerSources[mapId][params.type][params.source]) {
@@ -34951,28 +34951,28 @@ class Worker {
                 worker.removeSource(params);
             }
         }));
-        this.actor.registerMessageHandler('removeMap', (mapId) => performance.__awaiter(this, void 0, void 0, function* () {
+        this.actor.registerMessageHandler("RM" /* MessageType.removeMap */, (mapId) => performance.__awaiter(this, void 0, void 0, function* () {
             delete this.layerIndexes[mapId];
             delete this.availableImages[mapId];
             delete this.workerSources[mapId];
             delete this.demWorkerSources[mapId];
         }));
-        this.actor.registerMessageHandler('setReferrer', (_mapId, params) => performance.__awaiter(this, void 0, void 0, function* () {
+        this.actor.registerMessageHandler("SR" /* MessageType.setReferrer */, (_mapId, params) => performance.__awaiter(this, void 0, void 0, function* () {
             this.referrer = params;
         }));
-        this.actor.registerMessageHandler('syncRTLPluginState', (mapId, params) => {
+        this.actor.registerMessageHandler("SRPS" /* MessageType.syncRTLPluginState */, (mapId, params) => {
             return this._syncRTLPluginState(mapId, params);
         });
-        this.actor.registerMessageHandler('importScript', (_mapId, params) => performance.__awaiter(this, void 0, void 0, function* () {
+        this.actor.registerMessageHandler("IS" /* MessageType.importScript */, (_mapId, params) => performance.__awaiter(this, void 0, void 0, function* () {
             this.self.importScripts(params);
         }));
-        this.actor.registerMessageHandler('setImages', (mapId, params) => {
+        this.actor.registerMessageHandler("SI" /* MessageType.setImages */, (mapId, params) => {
             return this._setImages(mapId, params);
         });
-        this.actor.registerMessageHandler('updateLayers', (mapId, params) => performance.__awaiter(this, void 0, void 0, function* () {
+        this.actor.registerMessageHandler("UL" /* MessageType.updateLayers */, (mapId, params) => performance.__awaiter(this, void 0, void 0, function* () {
             this._getLayerIndex(mapId).update(params.layers, params.removedIds);
         }));
-        this.actor.registerMessageHandler('setLayers', (mapId, params) => performance.__awaiter(this, void 0, void 0, function* () {
+        this.actor.registerMessageHandler("SL" /* MessageType.setLayers */, (mapId, params) => performance.__awaiter(this, void 0, void 0, function* () {
             this._getLayerIndex(mapId).replace(params);
         }));
     }
@@ -35725,20 +35725,6 @@ var ImageRequest;
 })(ImageRequest || (ImageRequest = {}));
 ImageRequest.resetRequestQueue();
 
-/**
- * A type of MapLibre resource.
- */
-var ResourceType;
-(function (ResourceType) {
-    ResourceType["Glyphs"] = "Glyphs";
-    ResourceType["Image"] = "Image";
-    ResourceType["Source"] = "Source";
-    ResourceType["SpriteImage"] = "SpriteImage";
-    ResourceType["SpriteJSON"] = "SpriteJSON";
-    ResourceType["Style"] = "Style";
-    ResourceType["Tile"] = "Tile";
-    ResourceType["Unknown"] = "Unknown";
-})(ResourceType || (ResourceType = {}));
 class RequestManager {
     constructor(transformRequestFn) {
         this._transformRequestFn = transformRequestFn;
@@ -35808,9 +35794,9 @@ function loadSprite(originalSprite, requestManager, pixelRatio, abortController)
         const jsonsMap = {};
         const imagesMap = {};
         for (const { id, url } of spriteArray) {
-            const jsonRequestParameters = requestManager.transformRequest(requestManager.normalizeSpriteURL(url, format, '.json'), ResourceType.SpriteJSON);
+            const jsonRequestParameters = requestManager.transformRequest(requestManager.normalizeSpriteURL(url, format, '.json'), "SpriteJSON" /* ResourceType.SpriteJSON */);
             jsonsMap[id] = performance$1.getJSON(jsonRequestParameters, abortController);
-            const imageRequestParameters = requestManager.transformRequest(requestManager.normalizeSpriteURL(url, format, '.png'), ResourceType.SpriteImage);
+            const imageRequestParameters = requestManager.transformRequest(requestManager.normalizeSpriteURL(url, format, '.png'), "SpriteImage" /* ResourceType.SpriteImage */);
             imagesMap[id] = ImageRequest.getImage(imageRequestParameters, abortController);
         }
         yield Promise.all([...Object.values(jsonsMap), ...Object.values(imagesMap)]);
@@ -36193,7 +36179,7 @@ function loadGlyphRange(fontstack, range, urlTemplate, requestManager) {
     return performance$1.__awaiter(this, void 0, void 0, function* () {
         const begin = range * 256;
         const end = begin + 255;
-        const request = requestManager.transformRequest(urlTemplate.replace('{fontstack}', fontstack).replace('{range}', `${begin}-${end}`), ResourceType.Glyphs);
+        const request = requestManager.transformRequest(urlTemplate.replace('{fontstack}', fontstack).replace('{range}', `${begin}-${end}`), "Glyphs" /* ResourceType.Glyphs */);
         const response = yield performance$1.getArrayBuffer(request, new AbortController());
         if (!response || !response.data) {
             throw new Error(`Could not load glyph range. range: ${range}, ${begin}-${end}`);
@@ -36896,7 +36882,7 @@ let globalDispatcher;
 function getGlobalDispatcher() {
     if (!globalDispatcher) {
         globalDispatcher = new Dispatcher(getGlobalWorkerPool(), performance$1.GLOBAL_DISPATCHER_ID);
-        globalDispatcher.registerMessageHandler('getResource', (_mapId, params, abortController) => {
+        globalDispatcher.registerMessageHandler("GR" /* MessageType.getResource */, (_mapId, params, abortController) => {
             return performance$1.makeRequest(params, abortController);
         });
     }
@@ -37060,7 +37046,7 @@ function loadTileJson(options, requestManager, abortController) {
     return performance$1.__awaiter(this, void 0, void 0, function* () {
         let tileJSON = options;
         if (options.url) {
-            const response = yield performance$1.getJSON(requestManager.transformRequest(options.url, ResourceType.Source), abortController);
+            const response = yield performance$1.getJSON(requestManager.transformRequest(options.url, "Source" /* ResourceType.Source */), abortController);
             tileJSON = response.data;
         }
         else {
@@ -37530,7 +37516,7 @@ class VectorTileSource extends performance$1.Evented {
         return performance$1.__awaiter(this, void 0, void 0, function* () {
             const url = tile.tileID.canonical.url(this.tiles, this.map.getPixelRatio(), this.scheme);
             const params = {
-                request: this.map._requestManager.transformRequest(url, ResourceType.Tile),
+                request: this.map._requestManager.transformRequest(url, "Tile" /* ResourceType.Tile */),
                 uid: tile.uid,
                 tileID: tile.tileID,
                 zoom: tile.tileID.overscaledZ,
@@ -37542,10 +37528,10 @@ class VectorTileSource extends performance$1.Evented {
                 promoteId: this.promoteId
             };
             params.request.collectResourceTiming = this._collectResourceTiming;
-            let messageType = 'reloadTile';
+            let messageType = "RT" /* MessageType.reloadTile */;
             if (!tile.actor || tile.state === 'expired') {
                 tile.actor = this.dispatcher.getActor();
-                messageType = 'loadTile';
+                messageType = "LT" /* MessageType.loadTile */;
             }
             else if (tile.state === 'loading') {
                 return new Promise((resolve, reject) => {
@@ -37594,7 +37580,10 @@ class VectorTileSource extends performance$1.Evented {
                 delete tile.abortController;
             }
             if (tile.actor) {
-                yield tile.actor.sendAsync({ type: 'abortTile', data: { uid: tile.uid, type: this.type, source: this.id } });
+                yield tile.actor.sendAsync({
+                    type: "AT" /* MessageType.abortTile */,
+                    data: { uid: tile.uid, type: this.type, source: this.id }
+                });
             }
         });
     }
@@ -37602,7 +37591,14 @@ class VectorTileSource extends performance$1.Evented {
         return performance$1.__awaiter(this, void 0, void 0, function* () {
             tile.unloadVectorData();
             if (tile.actor) {
-                yield tile.actor.sendAsync({ type: 'removeTile', data: { uid: tile.uid, type: this.type, source: this.id } });
+                yield tile.actor.sendAsync({
+                    type: "RMT" /* MessageType.removeTile */,
+                    data: {
+                        uid: tile.uid,
+                        type: this.type,
+                        source: this.id
+                    }
+                });
             }
         });
     }
@@ -37739,7 +37735,7 @@ class RasterTileSource extends performance$1.Evented {
             const url = tile.tileID.canonical.url(this.tiles, this.map.getPixelRatio(), this.scheme);
             tile.abortController = new AbortController();
             try {
-                const response = yield ImageRequest.getImage(this.map._requestManager.transformRequest(url, ResourceType.Tile), tile.abortController, this.map._refreshExpiredTiles);
+                const response = yield ImageRequest.getImage(this.map._requestManager.transformRequest(url, "Tile" /* ResourceType.Tile */), tile.abortController, this.map._refreshExpiredTiles);
                 delete tile.abortController;
                 if (tile.aborted) {
                     tile.state = 'unloaded';
@@ -37829,7 +37825,7 @@ class RasterDEMTileSource extends RasterTileSource {
     loadTile(tile) {
         return performance$1.__awaiter(this, void 0, void 0, function* () {
             const url = tile.tileID.canonical.url(this.tiles, this.map.getPixelRatio(), this.scheme);
-            const request = this.map._requestManager.transformRequest(url, ResourceType.Tile);
+            const request = this.map._requestManager.transformRequest(url, "Tile" /* ResourceType.Tile */);
             tile.neighboringTiles = this._getNeighboringTiles(tile.tileID);
             tile.abortController = new AbortController();
             try {
@@ -37860,7 +37856,7 @@ class RasterDEMTileSource extends RasterTileSource {
                     if (!tile.actor || tile.state === 'expired') {
                         tile.actor = this.dispatcher.getActor();
                         /* eslint-disable require-atomic-updates */
-                        const data = yield tile.actor.sendAsync({ type: 'loadDEMTile', data: params });
+                        const data = yield tile.actor.sendAsync({ type: "LDT" /* MessageType.loadDEMTile */, data: params });
                         tile.dem = data;
                         tile.needsHillshadePrepare = true;
                         tile.needsTerrainPrepare = true;
@@ -37934,7 +37930,7 @@ class RasterDEMTileSource extends RasterTileSource {
             delete tile.neighboringTiles;
             tile.state = 'unloaded';
             if (tile.actor) {
-                yield tile.actor.sendAsync({ type: 'removeDEMTile', data: { type: this.type, uid: tile.uid, source: this.id } });
+                yield tile.actor.sendAsync({ type: "RDT" /* MessageType.removeDEMTile */, data: { type: this.type, uid: tile.uid, source: this.id } });
             }
         });
     }
@@ -38120,7 +38116,7 @@ class GeoJSONSource extends performance$1.Evented {
      * @returns a promise that is resolved with the zoom number
      */
     getClusterExpansionZoom(clusterId) {
-        return this.actor.sendAsync({ type: 'getClusterExpansionZoom', data: { type: this.type, clusterId, source: this.id } });
+        return this.actor.sendAsync({ type: "GCEZ" /* MessageType.getClusterExpansionZoom */, data: { type: this.type, clusterId, source: this.id } });
     }
     /**
      * For clustered sources, fetches the children of the given cluster on the next zoom level (as an array of GeoJSON features).
@@ -38129,7 +38125,7 @@ class GeoJSONSource extends performance$1.Evented {
      * @returns a promise that is resolved when the features are retrieved
      */
     getClusterChildren(clusterId) {
-        return this.actor.sendAsync({ type: 'getClusterChildren', data: { type: this.type, clusterId, source: this.id } });
+        return this.actor.sendAsync({ type: "GCC" /* MessageType.getClusterChildren */, data: { type: this.type, clusterId, source: this.id } });
     }
     /**
      * For clustered sources, fetches the original points that belong to the cluster (as an array of GeoJSON features).
@@ -38157,7 +38153,7 @@ class GeoJSONSource extends performance$1.Evented {
      * ```
      */
     getClusterLeaves(clusterId, limit, offset) {
-        return this.actor.sendAsync({ type: 'getClusterLeaves', data: {
+        return this.actor.sendAsync({ type: "GCL" /* MessageType.getClusterLeaves */, data: {
                 type: this.type,
                 source: this.id,
                 clusterId,
@@ -38178,7 +38174,7 @@ class GeoJSONSource extends performance$1.Evented {
                 options.dataDiff = diff;
             }
             else if (typeof this._data === 'string') {
-                options.request = this.map._requestManager.transformRequest(browser.resolveURL(this._data), ResourceType.Source);
+                options.request = this.map._requestManager.transformRequest(browser.resolveURL(this._data), "Source" /* ResourceType.Source */);
                 options.request.collectResourceTiming = this._collectResourceTiming;
             }
             else {
@@ -38187,7 +38183,7 @@ class GeoJSONSource extends performance$1.Evented {
             this._pendingLoads++;
             this.fire(new performance$1.Event('dataloading', { dataType: 'source' }));
             try {
-                const result = yield this.actor.sendAsync({ type: 'loadData', data: options });
+                const result = yield this.actor.sendAsync({ type: "LD" /* MessageType.loadData */, data: options });
                 this._pendingLoads--;
                 if (this._removed || result.abandoned) {
                     this.fire(new performance$1.Event('dataabort', { dataType: 'source' }));
@@ -38221,7 +38217,7 @@ class GeoJSONSource extends performance$1.Evented {
     }
     loadTile(tile) {
         return performance$1.__awaiter(this, void 0, void 0, function* () {
-            const message = !tile.actor ? 'loadTile' : 'reloadTile';
+            const message = !tile.actor ? "LT" /* MessageType.loadTile */ : "RT" /* MessageType.reloadTile */;
             tile.actor = this.actor;
             const params = {
                 type: this.type,
@@ -38240,7 +38236,7 @@ class GeoJSONSource extends performance$1.Evented {
             delete tile.abortController;
             tile.unloadVectorData();
             if (!tile.aborted) {
-                tile.loadVectorData(data, this.map.painter, message === 'reloadTile');
+                tile.loadVectorData(data, this.map.painter, message === "RT" /* MessageType.reloadTile */);
             }
         });
     }
@@ -38256,12 +38252,12 @@ class GeoJSONSource extends performance$1.Evented {
     unloadTile(tile) {
         return performance$1.__awaiter(this, void 0, void 0, function* () {
             tile.unloadVectorData();
-            yield this.actor.sendAsync({ type: 'removeTile', data: { uid: tile.uid, type: this.type, source: this.id } });
+            yield this.actor.sendAsync({ type: "RMT" /* MessageType.removeTile */, data: { uid: tile.uid, type: this.type, source: this.id } });
         });
     }
     onRemove() {
         this._removed = true;
-        this.actor.sendAsync({ type: 'removeSource', data: { type: this.type, source: this.id } });
+        this.actor.sendAsync({ type: "RS" /* MessageType.removeSource */, data: { type: this.type, source: this.id } });
     }
     serialize() {
         return performance$1.extend({}, this._options, {
@@ -38345,7 +38341,7 @@ class ImageSource extends performance$1.Evented {
             this.url = this.options.url;
             this._request = new AbortController();
             try {
-                const image = yield ImageRequest.getImage(this.map._requestManager.transformRequest(this.url, ResourceType.Image), this._request);
+                const image = yield ImageRequest.getImage(this.map._requestManager.transformRequest(this.url, "Image" /* ResourceType.Image */), this._request);
                 this._request = null;
                 this._loaded = true;
                 if (image && image.data) {
@@ -38573,7 +38569,7 @@ class VideoSource extends ImageSource {
             const options = this.options;
             this.urls = [];
             for (const url of options.urls) {
-                this.urls.push(this.map._requestManager.transformRequest(url, ResourceType.Source).url);
+                this.urls.push(this.map._requestManager.transformRequest(url, "Source" /* ResourceType.Source */).url);
             }
             try {
                 const video = yield performance$1.getVideo(this.urls);
@@ -38952,7 +38948,7 @@ class RTLMainThreadPlugin extends performance$1.Evented {
     /** Sync RTL plugin state by broadcasting a message to the worker */
     _syncState(statusToSend) {
         this.status = statusToSend;
-        return this.dispatcher.broadcast('syncRTLPluginState', { pluginStatus: statusToSend, pluginURL: this.url })
+        return this.dispatcher.broadcast("SRPS" /* MessageType.syncRTLPluginState */, { pluginStatus: statusToSend, pluginURL: this.url })
             .catch((e) => {
             this.status = 'error';
             throw e;
@@ -42896,10 +42892,10 @@ class Style extends performance$1.Evented {
         };
         this.map = map;
         this.dispatcher = new Dispatcher(getGlobalWorkerPool(), map._getMapId());
-        this.dispatcher.registerMessageHandler('getGlyphs', (mapId, params) => {
+        this.dispatcher.registerMessageHandler("GG" /* MessageType.getGlyphs */, (mapId, params) => {
             return this.getGlyphs(mapId, params);
         });
-        this.dispatcher.registerMessageHandler('getImages', (mapId, params) => {
+        this.dispatcher.registerMessageHandler("GI" /* MessageType.getImages */, (mapId, params) => {
             return this.getImages(mapId, params);
         });
         this.imageManager = new ImageManager();
@@ -42915,7 +42911,7 @@ class Style extends performance$1.Evented {
         this._loaded = false;
         this._availableImages = [];
         this._resetUpdates();
-        this.dispatcher.broadcast('setReferrer', performance$1.getReferrer());
+        this.dispatcher.broadcast("SR" /* MessageType.setReferrer */, performance$1.getReferrer());
         rtlMainThreadPluginFactory().on(RTLPluginLoadedEventName, this._rtlPluginLoaded);
         this.on('data', (event) => {
             if (event.dataType !== 'source' || event.sourceDataType !== 'metadata') {
@@ -42941,7 +42937,7 @@ class Style extends performance$1.Evented {
         this.fire(new performance$1.Event('dataloading', { dataType: 'style' }));
         options.validate = typeof options.validate === 'boolean' ?
             options.validate : true;
-        const request = this.map._requestManager.transformRequest(url, ResourceType.Style);
+        const request = this.map._requestManager.transformRequest(url, "Style" /* ResourceType.Style */);
         this._loadStyleRequest = new AbortController();
         performance$1.getJSON(request, this._loadStyleRequest).then((response) => {
             this._loadStyleRequest = null;
@@ -42994,7 +42990,7 @@ class Style extends performance$1.Evented {
         const dereferencedLayers = performance$1.derefLayers(this.stylesheet.layers);
         // Broadcast layers to workers first, so that expensive style processing (createStyleLayer)
         // can happen in parallel on both main and worker threads.
-        this.dispatcher.broadcast('setLayers', dereferencedLayers);
+        this.dispatcher.broadcast("SL" /* MessageType.setLayers */, dereferencedLayers);
         this._order = dereferencedLayers.map((layer) => layer.id);
         this._layers = {};
         // reset serialization field, to be populated only when needed
@@ -43047,7 +43043,7 @@ class Style extends performance$1.Evented {
             if (isUpdate) {
                 this._changed = true;
             }
-            this.dispatcher.broadcast('setImages', this._availableImages);
+            this.dispatcher.broadcast("SI" /* MessageType.setImages */, this._availableImages);
             this.fire(new performance$1.Event('data', { dataType: 'style' }));
             if (completion) {
                 completion(err);
@@ -43062,7 +43058,7 @@ class Style extends performance$1.Evented {
         this._spritesImagesIds = {};
         this._availableImages = this.imageManager.listImages();
         this._changed = true;
-        this.dispatcher.broadcast('setImages', this._availableImages);
+        this.dispatcher.broadcast("SI" /* MessageType.setImages */, this._availableImages);
         this.fire(new performance$1.Event('data', { dataType: 'style' }));
     }
     _validateLayer(layer) {
@@ -43233,7 +43229,7 @@ class Style extends performance$1.Evented {
         }
     }
     _updateWorkerLayers(updatedIds, removedIds) {
-        this.dispatcher.broadcast('updateLayers', {
+        this.dispatcher.broadcast("UL" /* MessageType.updateLayers */, {
             layers: this._serializeByIds(updatedIds),
             removedIds
         });
@@ -43368,7 +43364,7 @@ class Style extends performance$1.Evented {
         this._availableImages = this.imageManager.listImages();
         this._changedImages[id] = true;
         this._changed = true;
-        this.dispatcher.broadcast('setImages', this._availableImages);
+        this.dispatcher.broadcast("SI" /* MessageType.setImages */, this._availableImages);
         this.fire(new performance$1.Event('data', { dataType: 'style' }));
     }
     listImages() {
@@ -43960,7 +43956,7 @@ class Style extends performance$1.Evented {
         this.imageManager.setEventedParent(null);
         this.setEventedParent(null);
         if (mapRemoved) {
-            this.dispatcher.broadcast('removeMap', undefined);
+            this.dispatcher.broadcast("RM" /* MessageType.removeMap */, undefined);
         }
         this.dispatcher.remove(mapRemoved);
     }
@@ -44136,7 +44132,7 @@ class Style extends performance$1.Evented {
         delete this._spritesImagesIds[id];
         this._availableImages = this.imageManager.listImages();
         this._changed = true;
-        this.dispatcher.broadcast('setImages', this._availableImages);
+        this.dispatcher.broadcast("SI" /* MessageType.setImages */, this._availableImages);
         this.fire(new performance$1.Event('data', { dataType: 'style' }));
     }
     /**
@@ -54870,7 +54866,7 @@ let Map$1 = class Map extends Camera {
     _diffStyle(style, options) {
         if (typeof style === 'string') {
             const url = style;
-            const request = this._requestManager.transformRequest(url, ResourceType.Style);
+            const request = this._requestManager.transformRequest(url, "Style" /* ResourceType.Style */);
             performance$1.getJSON(request, new AbortController()).then((response) => {
                 this._updateDiff(response.data, options);
             }).catch((error) => {
@@ -55313,7 +55309,7 @@ let Map$1 = class Map extends Camera {
      * @see [Add an icon to the map](https://maplibre.org/maplibre-gl-js/docs/examples/add-image/)
      */
     loadImage(url) {
-        return ImageRequest.getImage(this._requestManager.transformRequest(url, ResourceType.Image), new AbortController());
+        return ImageRequest.getImage(this._requestManager.transformRequest(url, "Image" /* ResourceType.Image */), new AbortController());
     }
     /**
      * Returns an Array of strings containing the IDs of all images currently available in the map.
@@ -58873,7 +58869,7 @@ function setWorkerUrl(value) { performance$1.config.WORKER_URL = value; }
  * importScriptInWorkers('add-protocol-worker.js');
  * ```
  */
-function importScriptInWorkers(workerUrl) { return getGlobalDispatcher().broadcast('importScript', workerUrl); }
+function importScriptInWorkers(workerUrl) { return getGlobalDispatcher().broadcast("IS" /* MessageType.importScript */, workerUrl); }
 
 exports.AJAXError = performance$1.AJAXError;
 exports.Evented = performance$1.Evented;

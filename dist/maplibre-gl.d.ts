@@ -4581,99 +4581,121 @@ export type GetImagesResponse = {
 	[_: string]: StyleImage;
 };
 /**
+ * All the possible message types that can be sent to and from the worker
+ */
+export declare const enum MessageType {
+	loadDEMTile = "LDT",
+	getClusterExpansionZoom = "GCEZ",
+	getClusterChildren = "GCC",
+	getClusterLeaves = "GCL",
+	loadData = "LD",
+	loadTile = "LT",
+	reloadTile = "RT",
+	getGlyphs = "GG",
+	getImages = "GI",
+	setImages = "SI",
+	setLayers = "SL",
+	updateLayers = "UL",
+	syncRTLPluginState = "SRPS",
+	setReferrer = "SR",
+	removeSource = "RS",
+	removeMap = "RM",
+	importScript = "IS",
+	removeTile = "RMT",
+	abortTile = "AT",
+	removeDEMTile = "RDT",
+	getResource = "GR"
+}
+/**
  * This is basically a mapping between all the calls that are made to and from the workers.
  * The key is the event name, the first parameter is the event input type, and the last parameter is the output type.
  */
 export type RequestResponseMessageMap = {
-	"loadDEMTile": [
+	[MessageType.loadDEMTile]: [
 		WorkerDEMTileParameters,
 		DEMData
 	];
-	"getClusterExpansionZoom": [
+	[MessageType.getClusterExpansionZoom]: [
 		ClusterIDAndSource,
 		number
 	];
-	"getClusterChildren": [
+	[MessageType.getClusterChildren]: [
 		ClusterIDAndSource,
 		Array<GeoJSON.Feature>
 	];
-	"getClusterLeaves": [
+	[MessageType.getClusterLeaves]: [
 		GetClusterLeavesParams,
 		Array<GeoJSON.Feature>
 	];
-	"loadData": [
+	[MessageType.loadData]: [
 		LoadGeoJSONParameters,
 		GeoJSONWorkerSourceLoadDataResult
 	];
-	"loadTile": [
+	[MessageType.loadTile]: [
 		WorkerTileParameters,
 		WorkerTileResult
 	];
-	"reloadTile": [
+	[MessageType.reloadTile]: [
 		WorkerTileParameters,
 		WorkerTileResult
 	];
-	"getGlyphs": [
+	[MessageType.getGlyphs]: [
 		GetGlyphsParamerters,
 		GetGlyphsResponse
 	];
-	"getImages": [
+	[MessageType.getImages]: [
 		GetImagesParamerters,
 		GetImagesResponse
 	];
-	"setImages": [
+	[MessageType.setImages]: [
 		string[],
 		void
 	];
-	"setLayers": [
+	[MessageType.setLayers]: [
 		Array<LayerSpecification>,
 		void
 	];
-	"updateLayers": [
+	[MessageType.updateLayers]: [
 		UpdateLayersParamaeters,
 		void
 	];
-	"syncRTLPluginState": [
+	[MessageType.syncRTLPluginState]: [
 		PluginState,
 		PluginState
 	];
-	"setReferrer": [
+	[MessageType.setReferrer]: [
 		string,
 		void
 	];
-	"removeSource": [
+	[MessageType.removeSource]: [
 		RemoveSourceParams,
 		void
 	];
-	"removeMap": [
+	[MessageType.removeMap]: [
 		undefined,
 		void
 	];
-	"importScript": [
+	[MessageType.importScript]: [
 		string,
 		void
 	];
-	"removeTile": [
+	[MessageType.removeTile]: [
 		TileParameters,
 		void
 	];
-	"abortTile": [
+	[MessageType.abortTile]: [
 		TileParameters,
 		void
 	];
-	"removeDEMTile": [
+	[MessageType.removeDEMTile]: [
 		TileParameters,
 		void
 	];
-	"getResource": [
+	[MessageType.getResource]: [
 		RequestParameters,
 		GetResourceResponse<any>
 	];
 };
-/**
- * All the possible message types that can be sent to and from the worker
- */
-export type MessageType = keyof RequestResponseMessageMap;
 /**
  * The message to be sent by the actor
  */
