@@ -29,6 +29,10 @@ function getTokenizedAttributesAndUniforms(array: Array<string>): Array<string> 
     return result;
 }
 
+const programStats = window['programStats'] = {};
+let programCounter = 0;
+let programStart: number;
+
 /**
  * @internal
  * A webgl program to execute in the GPU space
@@ -53,7 +57,7 @@ export class Program<Us extends UniformBindings> {
         fixedUniforms: (b: Context, a: UniformLocations) => Us,
         showOverdrawInspector: boolean,
         terrain: Terrain) {
-
+        programStart = window.performance.now();
         const gl = context.gl;
         this.program = gl.createProgram();
 
@@ -144,6 +148,10 @@ export class Program<Us extends UniformBindings> {
         this.fixedUniforms = fixedUniforms(context, uniformLocations);
         this.terrainUniforms = terrainPreludeUniforms(context, uniformLocations);
         this.binderUniforms = configuration ? configuration.getUniforms(context, uniformLocations) : [];
+        const programDelta = window.performance.now() - programStart;
+
+        programStats[`p_${programCounter}`] = programDelta;
+        programCounter++;
     }
 
     draw(context: Context,
