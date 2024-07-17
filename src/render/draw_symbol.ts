@@ -58,48 +58,81 @@ type SymbolTileRenderState = {
 
 const identityMat4 = mat4.identity(new Float32Array(16));
 
-export function drawSymbols(painter: Painter, sourceCache: SourceCache, layer: SymbolStyleLayer, coords: Array<OverscaledTileID>, variableOffsets: {
-    [_ in CrossTileID]: VariableOffset;
-}) {
-    if (painter.renderPass !== 'translucent') return;
+export function drawSymbols(
+    painter: Painter,
+    sourceCache: SourceCache,
+    layer: SymbolStyleLayer,
+    coords: Array<OverscaledTileID>,
+    variableOffsets: {
+        [_ in CrossTileID]: VariableOffset;
+    }): void {
 
-    // Disable the stencil test so that labels aren't clipped to tile boundaries.
-    const stencilMode = StencilMode.disabled;
-    const colorMode = painter.colorModeForRenderPass();
-    const hasVariablePlacement = layer._unevaluatedLayout.hasValue('text-variable-anchor') || layer._unevaluatedLayout.hasValue('text-variable-anchor-offset');
-
-    //Compute variable-offsets before painting since icons and text data positioning
-    //depend on each other in this case.
-    if (hasVariablePlacement) {
-        updateVariableAnchors(coords, painter, layer, sourceCache,
-            layer.layout.get('text-rotation-alignment'),
-            layer.layout.get('text-pitch-alignment'),
-            layer.paint.get('text-translate'),
-            layer.paint.get('text-translate-anchor'),
-            variableOffsets
-        );
+    if (painter.renderPass !== 'translucent') {
+        return;
     }
 
-    if (layer.paint.get('icon-opacity').constantOr(1) !== 0) {
-        drawLayerSymbols(painter, sourceCache, layer, coords, false,
-            layer.paint.get('icon-translate'),
-            layer.paint.get('icon-translate-anchor'),
-            layer.layout.get('icon-rotation-alignment'),
-            layer.layout.get('icon-pitch-alignment'),
-            layer.layout.get('icon-keep-upright'),
-            stencilMode, colorMode
-        );
-    }
+    const iconVisible = layer.paint.get('icon-opacity').constantOr(1) !== 0;
+    const textVisible = layer.paint.get('text-opacity').constantOr(1) !== 0;
 
-    if (layer.paint.get('text-opacity').constantOr(1) !== 0) {
-        drawLayerSymbols(painter, sourceCache, layer, coords, true,
-            layer.paint.get('text-translate'),
-            layer.paint.get('text-translate-anchor'),
-            layer.layout.get('text-rotation-alignment'),
-            layer.layout.get('text-pitch-alignment'),
-            layer.layout.get('text-keep-upright'),
-            stencilMode, colorMode
-        );
+    if (iconVisible || textVisible) {
+        // Disable the stencil test so that labels aren't clipped to tile boundaries.
+        const stencilMode = StencilMode.disabled;
+        const colorMode = painter.colorModeForRenderPass();
+        const layerLayout = layer.layout;
+        const layerPaint = layer.paint;
+
+        const textRotationAlignment = layerLayout.get('text-rotation-alignment');
+        const textPitchAlignment = layerLayout.get('text-pitch-alignment');
+
+        const textTranslate = layerPaint.get('text-translate');
+        const textTranslateAnchor = layerPaint.get('text-translate-anchor');
+
+        const iconTranslate = layerPaint.get('icon-translate');
+        const iconTranslateAnchor = layerPaint.get('icon-translate-anchor');
+
+        const iconRotationAlignment = layerLayout.get('icon-rotation-alignment');
+        const iconPitchAlignment = layerLayout.get('icon-pitch-alignment');
+        const iconKeepUpright = layerLayout.get('icon-keep-upright');
+
+        const textKeepUpright = layerLayout.get('text-keep-upright');
+
+        // Compute variable-offsets before painting since icons and text data positioning
+        // depend on each other in this case.
+        const hasVariablePlacement = layer._unevaluatedLayout.hasValue('text-variable-anchor') ||
+                                 layer._unevaluatedLayout.hasValue('text-variable-anchor-offset');
+        if (hasVariablePlacement) {
+            updateVariableAnchors(coords, painter, layer, sourceCache,
+                textRotationAlignment,
+                textPitchAlignment,
+                textTranslate,
+                textTranslateAnchor,
+                variableOffsets
+            );
+        }
+
+        if (iconVisible) {
+            drawLayerSymbols(painter, sourceCache, layer, coords, false,
+                iconTranslate,
+                iconTranslateAnchor,
+                iconRotationAlignment,
+                iconPitchAlignment,
+                iconKeepUpright,
+                stencilMode,
+                colorMode
+            );
+        }
+
+        if (textVisible) {
+            drawLayerSymbols(painter, sourceCache, layer, coords, true,
+                textTranslate,
+                textTranslateAnchor,
+                textRotationAlignment,
+                textPitchAlignment,
+                textKeepUpright,
+                stencilMode,
+                colorMode
+            );
+        }
     }
 
     if (sourceCache.map.showCollisionBoxes) {
@@ -124,14 +157,17 @@ function calculateVariableRenderShift(
     );
 }
 
+/** loop coords array, get tile from sourceCache, get bucket from tile, and update each bucket */
 function updateVariableAnchors(coords: Array<OverscaledTileID>,
     painter: Painter,
-    layer:SymbolStyleLayer, sourceCache: SourceCache,
+    layer:SymbolStyleLayer,
+    sourceCache: SourceCache,
     rotationAlignment: SymbolLayerSpecification['layout']['text-rotation-alignment'],
     pitchAlignment: SymbolLayerSpecification['layout']['text-pitch-alignment'],
     translate: [number, number],
     translateAnchor: 'map' | 'viewport',
-    variableOffsets: {[_ in CrossTileID]: VariableOffset}) {
+    variableOffsets: {[_ in CrossTileID]: VariableOffset}): void {
+
     const transform = painter.transform;
     const projection = createProjection();
     const rotateWithMap = rotationAlignment === 'map';
@@ -153,8 +189,21 @@ function updateVariableAnchors(coords: Array<OverscaledTileID>,
             const tileScale = Math.pow(2, transform.zoom - tile.tileID.overscaledZ);
             const getElevation = painter.style.map.terrain ? (x: number, y: number) => painter.style.map.terrain.getElevation(coord, x, y) : null;
             const translation = projection.translatePosition(transform, tile, translate, translateAnchor);
-            updateVariableAnchorsForBucket(bucket, rotateWithMap, pitchWithMap, variableOffsets,
-                transform, labelPlaneMatrix, coord.posMatrix, tileScale, size, updateTextFitIcon, projection, translation, coord.toUnwrapped(), getElevation);
+            updateVariableAnchorsForBucket(
+                bucket,
+                rotateWithMap,
+                pitchWithMap,
+                variableOffsets,
+                transform,
+                labelPlaneMatrix,
+                coord.posMatrix,
+                tileScale,
+                size,
+                updateTextFitIcon,
+                projection,
+                translation,
+                coord.toUnwrapped(),
+                getElevation);
         }
     }
 }
@@ -203,6 +252,7 @@ function getShiftedAnchor(
     }
 }
 
+/** update bucket.text.dynamicLayoutVertexArray and bucket.icon.dynamicLayoutVertexArray */
 function updateVariableAnchorsForBucket(
     bucket: SymbolBucket,
     rotateWithMap: boolean,
@@ -217,7 +267,8 @@ function updateVariableAnchorsForBucket(
     projection: Projection,
     translation: [number, number],
     unwrappedTileID: UnwrappedTileID,
-    getElevation: (x: number, y: number) => number) {
+    getElevation: (x: number, y: number) => number): void {
+
     const placedSymbols = bucket.text.placedSymbolArray;
     const dynamicTextLayoutVertexArray = bucket.text.dynamicLayoutVertexArray;
     const dynamicIconLayoutVertexArray = bucket.icon.dynamicLayoutVertexArray;

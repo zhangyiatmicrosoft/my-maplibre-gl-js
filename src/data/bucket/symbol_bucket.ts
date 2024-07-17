@@ -145,10 +145,10 @@ function addVertex(
 }
 
 function addDynamicAttributes(dynamicLayoutVertexArray: StructArray, p: Point, angle: number) {
-    dynamicLayoutVertexArray.emplaceBack(p.x, p.y, angle);
-    dynamicLayoutVertexArray.emplaceBack(p.x, p.y, angle);
-    dynamicLayoutVertexArray.emplaceBack(p.x, p.y, angle);
-    dynamicLayoutVertexArray.emplaceBack(p.x, p.y, angle);
+    // adding 4 times were done in the original code from year 2017
+    for (let i = 0; i < 4; i++) {
+        dynamicLayoutVertexArray.emplaceBack(p.x, p.y, angle);
+    }
 }
 
 function containsRTLText(formattedText: Formatted): boolean {
