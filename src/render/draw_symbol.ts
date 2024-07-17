@@ -159,16 +159,34 @@ function updateVariableAnchors(coords: Array<OverscaledTileID>,
     }
 }
 
-function getShiftedAnchor(projectedAnchorPoint: Point, projectionContext: symbolProjection.SymbolProjectionContext, rotateWithMap, shift: Point, transformAngle: number, pitchedTextShiftCorrection: number) {
+function getShiftedAnchor(
+    projectedAnchorPoint: Point,
+    projectionContext: symbolProjection.SymbolProjectionContext,
+    rotateWithMap: boolean,
+    shift: Point,
+    projection: Projection,
+    transform: Transform,
+    tileAnchor: Point,
+    translation: [number, number],
+    unwrappedTileID: UnwrappedTileID
+) {
     // Usual case is that we take the projected anchor and add the pixel-based shift
     // calculated earlier. In the (somewhat weird) case of pitch-aligned text, we add an equivalent
     // tile-unit based shift to the anchor before projecting to the label plane.
-    const translatedAnchor = projectionContext.tileAnchorPoint.add(new Point(projectionContext.translation[0], projectionContext.translation[1]));
     if (projectionContext.pitchWithMap) {
+        const pitchedTextShiftCorrection =
+        projection.getPitchedTextCorrection(
+            transform,
+            tileAnchor.add(new Point(translation[0], translation[1])),
+            unwrappedTileID);
+
         let adjustedShift = shift.mult(pitchedTextShiftCorrection);
         if (!rotateWithMap) {
-            adjustedShift = adjustedShift.rotate(-transformAngle);
+            adjustedShift = adjustedShift.rotate(-transform.angle);
         }
+        const translatedAnchor = projectionContext.tileAnchorPoint.add(
+            new Point(projectionContext.translation[0], projectionContext.translation[1]));
+
         const tileAnchorShifted = translatedAnchor.add(adjustedShift);
         return symbolProjection.project(tileAnchorShifted, projectionContext.labelPlaneMatrix, projectionContext.getElevation).point;
     } else {
@@ -241,16 +259,25 @@ function updateVariableAnchorsForBucket(
             }
 
             const {width, height, anchor, textOffset, textBoxScale} = variableOffset;
-            const shift = calculateVariableRenderShift(anchor, width, height, textOffset, textBoxScale, renderTextSize);
+            const shift = calculateVariableRenderShift(
+                anchor, width, height, textOffset, textBoxScale, renderTextSize);
 
-            const pitchedTextCorrection = projection.getPitchedTextCorrection(transform, tileAnchor.add(new Point(translation[0], translation[1])), unwrappedTileID);
-            const shiftedAnchor = getShiftedAnchor(projectedAnchor.point, projectionContext, rotateWithMap, shift, transform.angle, pitchedTextCorrection);
+            const shiftedAnchor = getShiftedAnchor(
+                projectedAnchor.point,
+                projectionContext,
+                rotateWithMap,
+                shift,
+                projection,
+                transform,
+                tileAnchor,
+                translation,
+                unwrappedTileID);
 
             const angle = (bucket.allowVerticalPlacement && symbol.placedOrientation === WritingMode.vertical) ? Math.PI / 2 : 0;
             for (let g = 0; g < symbol.numGlyphs; g++) {
                 addDynamicAttributes(dynamicTextLayoutVertexArray, shiftedAnchor, angle);
             }
-            //Only offset horizontal text icons
+            // Only offset horizontal text icons
             if (updateTextFitIcon && symbol.associatedIconIndex >= 0) {
                 placedTextShifts[symbol.associatedIconIndex] = {shiftedAnchor, angle};
             }
