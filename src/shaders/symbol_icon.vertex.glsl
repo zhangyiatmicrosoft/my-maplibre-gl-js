@@ -1,3 +1,5 @@
+const float PI = 3.141592653589793;
+
 in vec4 a_pos_offset;
 in vec4 a_data;
 in vec4 a_pixeloffset;
@@ -27,10 +29,6 @@ uniform float u_pitched_scale;
 out vec2 v_tex;
 out float v_fade_opacity;
 
-vec4 projectTileWithElevation(vec2 posInTile, float elevation) {
-    return u_matrix * vec4(posInTile, elevation, 1.0);
-}
-
 #pragma mapbox: define lowp float opacity
 
 void main() {
@@ -58,9 +56,7 @@ void main() {
         size = u_size;
     }
 
-    vec2 translated_a_pos = a_pos + u_translation;
-    vec4 projectedPoint = projectTileWithElevation(translated_a_pos, ele);
-
+    vec4 projectedPoint = u_matrix * vec4(a_pos, ele, 1);
     highp float camera_to_anchor_distance = projectedPoint.w;
     // See comments in symbol_sdf.vertex
     highp float distance_ratio = u_pitch_with_map ?
@@ -78,7 +74,7 @@ void main() {
     highp float symbol_rotation = 0.0;
     if (u_rotate_symbol) {
         // See comments in symbol_sdf.vertex
-        vec4 offsetProjectedPoint = projectTileWithElevation(translated_a_pos + vec2(1, 0), ele);
+        vec4 offsetProjectedPoint = u_matrix * vec4(a_pos + vec2(1, 0), ele, 1);
 
         vec2 a = projectedPoint.xy / projectedPoint.w;
         vec2 b = offsetProjectedPoint.xy / offsetProjectedPoint.w;
@@ -90,24 +86,9 @@ void main() {
     highp float angle_cos = cos(segment_angle + symbol_rotation);
     mat2 rotation_matrix = mat2(angle_cos, -1.0 * angle_sin, angle_sin, angle_cos);
 
-    vec4 projected_pos;
-    if (u_is_along_line || u_is_variable_anchor) {
-        projected_pos = vec4(a_projected_pos.xy, ele, 1.0);
-    } else if (u_pitch_with_map) {
-        projected_pos = u_label_plane_matrix * vec4(a_projected_pos.xy + u_translation, ele, 1.0);
-    } else {
-        projected_pos = u_label_plane_matrix * projectTileWithElevation(a_projected_pos.xy + u_translation, ele);
-    }
-
+    vec4 projected_pos = u_label_plane_matrix * vec4(a_projected_pos.xy, ele, 1.0);
     float z = float(u_pitch_with_map) * projected_pos.z / projected_pos.w;
-
-    float projectionScaling = 1.0;
-
-    vec4 finalPos = u_coord_matrix * vec4(projected_pos.xy / projected_pos.w + rotation_matrix * (a_offset / 32.0 * max(a_minFontScale, fontScale) + a_pxoffset / 16.0) * projectionScaling, z, 1.0);
-    if(u_pitch_with_map) {
-        finalPos = projectTileWithElevation(finalPos.xy, finalPos.z);
-    }
-    gl_Position = finalPos;
+    gl_Position = u_coord_matrix * vec4(projected_pos.xy / projected_pos.w + rotation_matrix * (a_offset / 32.0 * max(a_minFontScale, fontScale) + a_pxoffset / 16.0), z, 1.0);
 
     v_tex = a_tex / u_texsize;
     vec2 fade_opacity = unpack_opacity(a_fade_opacity);
