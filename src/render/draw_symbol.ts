@@ -392,7 +392,7 @@ function drawLayerSymbols(
             symbolProjection.updateLineLabels(bucket, coord.posMatrix, painter, isText, labelPlaneMatrix, glCoordMatrixForSymbolPlacement, pitchWithMap, keepUpright, rotateToLine, projection, coord.toUnwrapped(), tr.width, tr.height, translation, getElevation);
         }
 
-        const {matrix, shaderVariableAnchor, uLabelPlaneMatrix, uMatrixAdjustment, uTranslationAdjustment} =
+        const {matrix, uLabelPlaneMatrix, matrixAdjusted, translationAdjusted} =
         computeUniforms(coord, isText, hasVariablePlacement,
             updateTextFitIcon, alongLine, labelPlaneMatrix, pitchWithMap, translation);
 
@@ -402,17 +402,20 @@ function drawLayerSymbols(
         if (isSDF) {
             if (!bucket.iconsInText) {
                 uniformValues = symbolSDFUniformValues(sizeData.kind,
-                    size, rotateInShader, pitchWithMap, alongLine, shaderVariableAnchor, painter, matrix,
-                    uLabelPlaneMatrix, glCoordMatrixForShader, translation, isText, texSize, true, pitchedTextRescaling);
+                    size, rotateInShader, pitchWithMap, painter, matrix, matrixAdjusted,
+                    uLabelPlaneMatrix, glCoordMatrixForShader, translation, translationAdjusted,
+                    isText, texSize, true, pitchedTextRescaling);
             } else {
                 uniformValues = symbolTextAndIconUniformValues(sizeData.kind,
-                    size, rotateInShader, pitchWithMap, alongLine, shaderVariableAnchor, painter, matrix,
-                    uLabelPlaneMatrix, glCoordMatrixForShader, translation, texSize, texSizeIcon, pitchedTextRescaling);
+                    size, rotateInShader, pitchWithMap, painter, matrix, matrixAdjusted,
+                    uLabelPlaneMatrix, glCoordMatrixForShader, translation, translationAdjusted,
+                    texSize, texSizeIcon, pitchedTextRescaling);
             }
         } else {
             uniformValues = symbolIconUniformValues(sizeData.kind,
-                size, rotateInShader, pitchWithMap, alongLine, shaderVariableAnchor, painter, matrix,
-                uLabelPlaneMatrix, glCoordMatrixForShader, translation, isText, texSize, pitchedTextRescaling);
+                size, rotateInShader, pitchWithMap, painter, matrix, matrixAdjusted,
+                uLabelPlaneMatrix, glCoordMatrixForShader, translation, translationAdjusted,
+                isText, texSize, pitchedTextRescaling);
         }
 
         const state = {
@@ -513,25 +516,24 @@ function computeUniforms(
 
     // these uniforms are used to adjust for conditions of alongLine/variablePlacement
     // so shaders can use the same uniform for all cases and not have to branch
-    let matrixAdjustment: mat4;
-    let translationAdjustment: [number, number];
+    let matrixAdjusted: mat4;
+    let translationAdjusted: [number, number];
 
     if (alongLine || shaderVariableAnchor) {
-        matrixAdjustment = identityMat4;
-        translationAdjustment  = [0, 0];
+        matrixAdjusted = identityMat4;
+        translationAdjusted  = [0, 0];
     } else if (pitchWithMap) {
-	    matrixAdjustment = identityMat4;
-        translationAdjustment = originalTranslation;
+	    matrixAdjusted = identityMat4;
+        translationAdjusted = originalTranslation;
     } else {
-        matrixAdjustment = matrix;
-        translationAdjustment = originalTranslation;
+        matrixAdjusted = matrix;
+        translationAdjusted = originalTranslation;
     }
 
     return {
         matrix,
-        shaderVariableAnchor,
         uLabelPlaneMatrix,
-        matrixAdjustment,
-        translationAdjustment
+        matrixAdjusted,
+        translationAdjusted
     };
 }

@@ -266,8 +266,6 @@ const symbolTextAndIconUniformValues = (
     },
     rotateInShader: boolean,
     pitchWithMap: boolean,
-    isAlongLine: boolean,
-    isVariableAnchor: boolean,
     painter: Painter,
     matrix: mat4,
     matrixAdjusted: mat4,
