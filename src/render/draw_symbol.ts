@@ -392,11 +392,9 @@ function drawLayerSymbols(
             symbolProjection.updateLineLabels(bucket, coord.posMatrix, painter, isText, labelPlaneMatrix, glCoordMatrixForSymbolPlacement, pitchWithMap, keepUpright, rotateToLine, projection, coord.toUnwrapped(), tr.width, tr.height, translation, getElevation);
         }
 
-        const matrix = coord.posMatrix; // formerly also incorporated translate and translate-anchor
-        const shaderVariableAnchor = (isText && hasVariablePlacement) || updateTextFitIcon;
-        const noLabelPlane = (alongLine || shaderVariableAnchor);
-        const uLabelPlaneMatrix = noLabelPlane ? identityMat4 : labelPlaneMatrix;
-        const uglCoordMatrix = glCoordMatrixForShader; // formerly also incorporated translate and translate-anchor
+        const {matrix, shaderVariableAnchor, uLabelPlaneMatrix, uMatrixAdjustment, uTranslationAdjustment} =
+        computeUniforms(coord, isText, hasVariablePlacement,
+            updateTextFitIcon, alongLine, labelPlaneMatrix, pitchWithMap, translation);
 
         const hasHalo = isSDF && layer.paint.get(isText ? 'text-halo-width' : 'icon-halo-width').constantOr(1) !== 0;
 
@@ -405,16 +403,16 @@ function drawLayerSymbols(
             if (!bucket.iconsInText) {
                 uniformValues = symbolSDFUniformValues(sizeData.kind,
                     size, rotateInShader, pitchWithMap, alongLine, shaderVariableAnchor, painter, matrix,
-                    uLabelPlaneMatrix, uglCoordMatrix, translation, isText, texSize, true, pitchedTextRescaling);
+                    uLabelPlaneMatrix, glCoordMatrixForShader, translation, isText, texSize, true, pitchedTextRescaling);
             } else {
                 uniformValues = symbolTextAndIconUniformValues(sizeData.kind,
                     size, rotateInShader, pitchWithMap, alongLine, shaderVariableAnchor, painter, matrix,
-                    uLabelPlaneMatrix, uglCoordMatrix, translation, texSize, texSizeIcon, pitchedTextRescaling);
+                    uLabelPlaneMatrix, glCoordMatrixForShader, translation, texSize, texSizeIcon, pitchedTextRescaling);
             }
         } else {
             uniformValues = symbolIconUniformValues(sizeData.kind,
                 size, rotateInShader, pitchWithMap, alongLine, shaderVariableAnchor, painter, matrix,
-                uLabelPlaneMatrix, uglCoordMatrix, translation, isText, texSize, pitchedTextRescaling);
+                uLabelPlaneMatrix, glCoordMatrixForShader, translation, isText, texSize, pitchedTextRescaling);
         }
 
         const state = {
@@ -496,4 +494,44 @@ function drawSymbolElements(
         buffers.indexBuffer, segments, layer.paint,
         painter.transform.zoom, buffers.programConfigurations.get(layer.id),
         buffers.dynamicLayoutVertexBuffer, buffers.opacityVertexBuffer);
+}
+
+function computeUniforms(
+    coord: OverscaledTileID,
+    isText: boolean,
+    hasVariablePlacement: boolean,
+    updateTextFitIcon: boolean,
+    alongLine: boolean,
+    labelPlaneMatrix: mat4,
+    pitchWithMap: boolean,
+    originalTranslation: [number, number]
+) {
+    const matrix = coord.posMatrix; // formerly also incorporated translate and translate-anchor
+    const shaderVariableAnchor = (isText && hasVariablePlacement) || updateTextFitIcon;
+    const noLabelPlane = (alongLine || shaderVariableAnchor);
+    const uLabelPlaneMatrix = noLabelPlane ? identityMat4 : labelPlaneMatrix;
+
+    // these uniforms are used to adjust for conditions of alongLine/variablePlacement
+    // so shaders can use the same uniform for all cases and not have to branch
+    let matrixAdjustment: mat4;
+    let translationAdjustment: [number, number];
+
+    if (alongLine || shaderVariableAnchor) {
+        matrixAdjustment = identityMat4;
+        translationAdjustment  = [0, 0];
+    } else if (pitchWithMap) {
+	    matrixAdjustment = identityMat4;
+        translationAdjustment = originalTranslation;
+    } else {
+        matrixAdjustment = matrix;
+        translationAdjustment = originalTranslation;
+    }
+
+    return {
+        matrix,
+        shaderVariableAnchor,
+        uLabelPlaneMatrix,
+        matrixAdjustment,
+        translationAdjustment
+    };
 }
