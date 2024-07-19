@@ -26,8 +26,7 @@ uniform highp float u_camera_to_center_distance;
 uniform float u_fade_change;
 uniform vec2 u_texsize;
 uniform vec2 u_texsize_icon;
-uniform bool u_is_along_line;
-uniform bool u_is_variable_anchor;
+uniform bool u_skip_label_plane_matrix;
 uniform vec2 u_translation;
 uniform float u_pitched_scale;
 
@@ -110,7 +109,7 @@ void main() {
     mat2 rotation_matrix = mat2(angle_cos, -1.0 * angle_sin, angle_sin, angle_cos);
 
     vec4 projected_pos;
-    if (u_is_along_line || u_is_variable_anchor) {
+    if (u_skip_label_plane_matrix) {
         projected_pos = vec4(a_projected_pos.xy, ele, 1.0);
     } else if (u_pitch_with_map) {
         projected_pos = u_label_plane_matrix * vec4(a_projected_pos.xy + u_translation, ele, 1.0);
@@ -120,9 +119,7 @@ void main() {
 
     float z = float(u_pitch_with_map) * projected_pos.z / projected_pos.w;
 
-    float projectionScaling = 1.0;
-
-    vec4 finalPos = u_coord_matrix * vec4(projected_pos.xy / projected_pos.w + rotation_matrix * (a_offset / 32.0 * fontScale) * projectionScaling, z, 1.0);
+    vec4 finalPos = u_coord_matrix * vec4(projected_pos.xy / projected_pos.w + rotation_matrix * (a_offset / 32.0 * fontScale), z, 1.0);
     if(u_pitch_with_map) {
         finalPos = projectTileWithElevation(finalPos.xy, finalPos.z);
     }

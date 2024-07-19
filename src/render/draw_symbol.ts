@@ -290,6 +290,8 @@ function getSymbolProgramName(isSDF: boolean, isText: boolean, bucket: SymbolBuc
     }
 }
 
+const zeroSize: [number, number] = [0, 0];
+
 function drawLayerSymbols(
     painter: Painter,
     sourceCache: SourceCache,
@@ -348,8 +350,8 @@ function drawLayerSymbols(
         const size = evaluateSizeForZoom(sizeData, tr.zoom);
         const terrainData = painter.style.map.terrain && painter.style.map.terrain.getTerrainData(coord);
 
-        let texSize: [number, number];
-        let texSizeIcon: [number, number] = [0, 0];
+        let texSize: [number, number] = zeroSize;
+        let texSizeIcon: [number, number] = zeroSize;
         let atlasTexture: Texture;
         let atlasInterpolation: TextureFilter;
         let atlasTextureIcon = null;

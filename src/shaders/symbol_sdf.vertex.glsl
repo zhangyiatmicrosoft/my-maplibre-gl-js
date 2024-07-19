@@ -20,8 +20,7 @@ uniform mat4 u_label_plane_matrix;
 uniform mat4 u_coord_matrix;
 uniform bool u_is_text;
 uniform bool u_pitch_with_map;
-uniform bool u_is_along_line;
-uniform bool u_is_variable_anchor;
+uniform bool u_skip_label_plane_matrix;
 uniform highp float u_pitch;
 uniform bool u_rotate_symbol;
 uniform highp float u_aspect_ratio;
@@ -112,7 +111,7 @@ void main() {
     mat2 rotation_matrix = mat2(angle_cos, -1.0 * angle_sin, angle_sin, angle_cos);
 
     vec4 projected_pos;
-    if (u_is_along_line || u_is_variable_anchor) {  
+    if (u_skip_label_plane_matrix) {
         // Label plane matrix is identity in this case
         projected_pos = vec4(a_projected_pos.xy, ele, 1.0);
     } else if (u_pitch_with_map) {
@@ -123,9 +122,7 @@ void main() {
 
     float z = float(u_pitch_with_map) * projected_pos.z / projected_pos.w;
 
-    float projectionScaling = 1.0;
-
-    vec4 finalPos = u_coord_matrix * vec4(projected_pos.xy / projected_pos.w + rotation_matrix * (a_offset / 32.0 * fontScale + a_pxoffset) * projectionScaling, z, 1.0);
+    vec4 finalPos = u_coord_matrix * vec4(projected_pos.xy / projected_pos.w + rotation_matrix * (a_offset / 32.0 * fontScale + a_pxoffset), z, 1.0);
     if(u_pitch_with_map) {
         finalPos = projectTileWithElevation(finalPos.xy, finalPos.z);
     }

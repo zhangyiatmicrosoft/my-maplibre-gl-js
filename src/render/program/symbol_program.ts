@@ -21,8 +21,7 @@ export type SymbolIconUniformsType = {
     'u_coord_matrix': UniformMatrix4f;
     'u_is_text': Uniform1i;
     'u_pitch_with_map': Uniform1i;
-    'u_is_along_line': Uniform1i;
-    'u_is_variable_anchor': Uniform1i;
+    'u_skip_label_plane_matrix': Uniform1i;
     'u_texsize': Uniform2f;
     'u_texture': Uniform1i;
     'u_translation': Uniform2f;
@@ -44,8 +43,7 @@ export type SymbolSDFUniformsType = {
     'u_coord_matrix': UniformMatrix4f;
     'u_is_text': Uniform1i;
     'u_pitch_with_map': Uniform1i;
-    'u_is_along_line': Uniform1i;
-    'u_is_variable_anchor': Uniform1i;
+    'u_skip_label_plane_matrix': Uniform1i;
     'u_texsize': Uniform2f;
     'u_texture': Uniform1i;
     'u_gamma_scale': Uniform1f;
@@ -70,8 +68,7 @@ export type symbolTextAndIconUniformsType = {
     'u_coord_matrix': UniformMatrix4f;
     'u_is_text': Uniform1i;
     'u_pitch_with_map': Uniform1i;
-    'u_is_along_line': Uniform1i;
-    'u_is_variable_anchor': Uniform1i;
+    'u_skip_label_plane_matrix': Uniform1i;
     'u_texsize': Uniform2f;
     'u_texsize_icon': Uniform2f;
     'u_texture': Uniform1i;
@@ -98,8 +95,7 @@ const symbolIconUniforms = (context: Context, locations: UniformLocations): Symb
     'u_coord_matrix': new UniformMatrix4f(context, locations.u_coord_matrix),
     'u_is_text': new Uniform1i(context, locations.u_is_text),
     'u_pitch_with_map': new Uniform1i(context, locations.u_pitch_with_map),
-    'u_is_along_line': new Uniform1i(context, locations.u_is_along_line),
-    'u_is_variable_anchor': new Uniform1i(context, locations.u_is_variable_anchor),
+    'u_skip_label_plane_matrix': new Uniform1i(context, locations.u_skip_label_plane_matrix),
     'u_texsize': new Uniform2f(context, locations.u_texsize),
     'u_texture': new Uniform1i(context, locations.u_texture),
     'u_translation': new Uniform2f(context, locations.u_translation),
@@ -121,8 +117,7 @@ const symbolSDFUniforms = (context: Context, locations: UniformLocations): Symbo
     'u_coord_matrix': new UniformMatrix4f(context, locations.u_coord_matrix),
     'u_is_text': new Uniform1i(context, locations.u_is_text),
     'u_pitch_with_map': new Uniform1i(context, locations.u_pitch_with_map),
-    'u_is_along_line': new Uniform1i(context, locations.u_is_along_line),
-    'u_is_variable_anchor': new Uniform1i(context, locations.u_is_variable_anchor),
+    'u_skip_label_plane_matrix': new Uniform1i(context, locations.u_skip_label_plane_matrix),
     'u_texsize': new Uniform2f(context, locations.u_texsize),
     'u_texture': new Uniform1i(context, locations.u_texture),
     'u_gamma_scale': new Uniform1f(context, locations.u_gamma_scale),
@@ -147,8 +142,7 @@ const symbolTextAndIconUniforms = (context: Context, locations: UniformLocations
     'u_coord_matrix': new UniformMatrix4f(context, locations.u_coord_matrix),
     'u_is_text': new Uniform1i(context, locations.u_is_text),
     'u_pitch_with_map': new Uniform1i(context, locations.u_pitch_with_map),
-    'u_is_along_line': new Uniform1i(context, locations.u_is_along_line),
-    'u_is_variable_anchor': new Uniform1i(context, locations.u_is_variable_anchor),
+    'u_skip_label_plane_matrix': new Uniform1i(context, locations.u_skip_label_plane_matrix),
     'u_texsize': new Uniform2f(context, locations.u_texsize),
     'u_texsize_icon': new Uniform2f(context, locations.u_texsize_icon),
     'u_texture': new Uniform1i(context, locations.u_texture),
@@ -196,8 +190,7 @@ const symbolIconUniformValues = (
         'u_coord_matrix': glCoordMatrix,
         'u_is_text': +isText,
         'u_pitch_with_map': +pitchWithMap,
-        'u_is_along_line': isAlongLine,
-        'u_is_variable_anchor': isVariableAnchor,
+        'u_skip_label_plane_matrix': isAlongLine || isVariableAnchor,
         'u_texsize': texSize,
         'u_texture': 0,
         'u_translation': translation,
