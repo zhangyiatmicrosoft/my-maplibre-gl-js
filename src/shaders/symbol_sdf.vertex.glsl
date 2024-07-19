@@ -112,14 +112,9 @@ void main() {
     mat2 rotation_matrix = mat2(angle_cos, -1.0 * angle_sin, angle_sin, angle_cos);
 
     vec4 projected_pos;
-    if (u_is_along_line || u_is_variable_anchor) {  
-        // Label plane matrix is identity in this case
-        projected_pos = vec4(a_projected_pos.xy, ele, 1.0);
-    } else if (u_pitch_with_map) {
-        projected_pos = u_label_plane_matrix * vec4(a_projected_pos.xy + u_translation, ele, 1.0);
-    } else {
-        projected_pos = u_label_plane_matrix * projectTileWithElevation(a_projected_pos.xy + u_translation, ele);
-    }
+    
+    projected_pos = u_label_plane_matrix * projectTileWithElevation(a_projected_pos.xy + u_translation, ele);
+    
 
     float z = float(u_pitch_with_map) * projected_pos.z / projected_pos.w;
 
