@@ -523,7 +523,7 @@ function computeUniforms(
         matrixAdjusted = identityMat4;
         translationAdjusted  = [0, 0];
     } else if (pitchWithMap) {
-	    matrixAdjusted = identityMat4;
+        matrixAdjusted = identityMat4;
         translationAdjusted = originalTranslation;
     } else {
         matrixAdjusted = matrix;
