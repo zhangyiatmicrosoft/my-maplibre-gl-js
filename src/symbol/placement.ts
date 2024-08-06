@@ -24,6 +24,7 @@ import {Terrain} from '../render/terrain';
 import {warnOnce} from '../util/util';
 import {TextAnchor, TextAnchorEnum} from '../style/style_layer/variable_text_anchor';
 import {Projection} from '../geo/projection/projection';
+import type * as UIMap from '../ui/map';
 
 class OpacityState {
     opacity: number;
@@ -227,10 +228,10 @@ export class Placement {
         icon: number[];
     }>>;
 
-    constructor(transform: Transform, projection: Projection, terrain: Terrain, fadeDuration: number, crossSourceCollisions: boolean, prevPlacement?: Placement) {
+    constructor(transform: Transform, projection: Projection, terrain: Terrain, fadeDuration: number, crossSourceCollisions: boolean, prevPlacement?: Placement, mapObject?: UIMap.Map) {
         this.transform = transform.clone();
         this.terrain = terrain;
-        this.collisionIndex = new CollisionIndex(this.transform, projection);
+        this.collisionIndex = new CollisionIndex(this.transform, projection, undefined, undefined, mapObject);
         this.placements = {};
         this.opacities = {};
         this.variableOffsets = {};

@@ -20,6 +20,7 @@ import {UnwrappedTileID} from '../source/tile_id';
 import {SymbolProjectionContext} from '../symbol/projection';
 import {Projection} from '../geo/projection/projection';
 import {clamp, getAABB} from '../util/util';
+import {Map} from '../ui/map';
 
 // When a symbol crosses the edge that causes it to be included in
 // collision detection, it will cause changes in the symbols around
@@ -74,14 +75,27 @@ export class CollisionIndex {
     // The cutoff defines a threshold to no longer render labels near the horizon.
     perspectiveRatioCutoff: number;
 
+    private _map: Map;
+
+    private static _projectCollisionBoxCounter = 0;
+
     constructor(
         transform: Transform,
         projection: Projection,
-        grid = new GridIndex<FeatureKey>(transform.width + 2 * viewportPadding, transform.height + 2 * viewportPadding, 25),
-        ignoredGrid = new GridIndex<FeatureKey>(transform.width + 2 * viewportPadding, transform.height + 2 * viewportPadding, 25)
+        grid?: GridIndex<FeatureKey>,
+        ignoredGrid?: GridIndex<FeatureKey>,
+        mapObject?: Map
     ) {
         this.transform = transform;
         this.mapProjection = projection;
+
+        if (!grid) {
+            grid = new GridIndex<FeatureKey>(transform.width + 2 * viewportPadding, transform.height + 2 * viewportPadding, 25);
+        }
+
+        if (!ignoredGrid) {
+            ignoredGrid = new GridIndex<FeatureKey>(transform.width + 2 * viewportPadding, transform.height + 2 * viewportPadding, 25);
+        }
 
         this.grid = grid;
         this.ignoredGrid = ignoredGrid;
@@ -93,6 +107,8 @@ export class CollisionIndex {
         this.gridBottomBoundary = transform.height + 2 * viewportPadding;
 
         this.perspectiveRatioCutoff = 0.6;
+
+        this._map = mapObject;
     }
 
     placeCollisionBox(
@@ -471,6 +487,8 @@ export class CollisionIndex {
             allPointsOccluded: boolean;
         } {
 
+        CollisionIndex._projectCollisionBoxCounter++;
+
         const tileToViewport = textPixelRatio * projectedPoint.perspectiveRatio;
 
         // These vectors are valid both for screen space viewport-rotation-aligned texts and for pitch-align: map texts that are map-rotation-aligned.
@@ -579,6 +597,10 @@ export class CollisionIndex {
             // Labels that are not pitchWithMap cannot ever hide behind the horizon.
             anyPointVisible = true;
         }
+
+        this._map.once('idle', () => {
+            console.log('first idle', CollisionIndex._projectCollisionBoxCounter);
+        });
 
         return {
             box: getAABB(points),

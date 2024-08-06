@@ -9,6 +9,7 @@ import type {Tile} from '../source/tile';
 import type {BucketPart} from '../symbol/placement';
 import {Terrain} from '../render/terrain';
 import {createProjection} from '../geo/projection/projection';
+import type {Map} from '../ui/map';
 
 class LayerPlacement {
     _sortAcrossTiles: boolean;
@@ -77,9 +78,10 @@ export class PauseablePlacement {
         showCollisionBoxes: boolean,
         fadeDuration: number,
         crossSourceCollisions: boolean,
-        prevPlacement?: Placement
+        prevPlacement?: Placement,
+        mapObjet?: Map
     ) {
-        this.placement = new Placement(transform, createProjection(), terrain, fadeDuration, crossSourceCollisions, prevPlacement);
+        this.placement = new Placement(transform, createProjection(), terrain, fadeDuration, crossSourceCollisions, prevPlacement, mapObjet);
         this._currentPlacementIndex = order.length - 1;
         this._forceFullPlacement = forceFullPlacement;
         this._showCollisionBoxes = showCollisionBoxes;
