@@ -79,6 +79,7 @@ export class CollisionIndex {
 
     private static _projectCollisionBoxCounter = 0;
     private static _projectCollisionBoxTime = 0;
+    private static registered = false;
 
     constructor(
         transform: Transform,
@@ -600,9 +601,12 @@ export class CollisionIndex {
             anyPointVisible = true;
         }
 
-        this._map.once('idle', () => {
-            console.log('first idle counter=', CollisionIndex._projectCollisionBoxCounter, 'time=', CollisionIndex._projectCollisionBoxTime);
-        });
+        if (!CollisionIndex.registered && this._map) {
+            CollisionIndex.registered = true;
+            this._map.once('idle', () => {
+                console.log('first idle counter=', CollisionIndex._projectCollisionBoxCounter, 'time=', CollisionIndex._projectCollisionBoxTime);
+            });
+        }
 
         const aabb = getAABB(points);
 
