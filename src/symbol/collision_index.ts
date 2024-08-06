@@ -78,6 +78,7 @@ export class CollisionIndex {
     private _map: Map;
 
     private static _projectCollisionBoxCounter = 0;
+    private static _projectCollisionBoxTime = 0;
 
     constructor(
         transform: Transform,
@@ -488,6 +489,7 @@ export class CollisionIndex {
         } {
 
         CollisionIndex._projectCollisionBoxCounter++;
+        const start = window.performance.now();
 
         const tileToViewport = textPixelRatio * projectedPoint.perspectiveRatio;
 
@@ -599,11 +601,18 @@ export class CollisionIndex {
         }
 
         this._map.once('idle', () => {
-            console.log('first idle', CollisionIndex._projectCollisionBoxCounter);
+            console.log('first idle counter=', CollisionIndex._projectCollisionBoxCounter, 'time=', CollisionIndex._projectCollisionBoxTime);
         });
 
+        const aabb = getAABB(points);
+
+        const end = window.performance.now();
+        const timespent = end - start;
+
+        CollisionIndex._projectCollisionBoxTime += timespent;
+
         return {
-            box: getAABB(points),
+            box: aabb,
             allPointsOccluded: !anyPointVisible
         };
     }
