@@ -87,6 +87,7 @@ export class CollisionIndex {
             box: Array<number>;
             offscreen: boolean;
         } {
+        const placeCollisionBoxStart = window.performance.now();
         const projectedPoint = this.projectAndGetPerspectiveRatio(posMatrix, collisionBox.anchorPointX, collisionBox.anchorPointY, getElevation);
         const tileToViewport = textPixelRatio * projectedPoint.perspectiveRatio;
         const tlX = collisionBox.x1 * tileToViewport + projectedPoint.point.x;
@@ -103,10 +104,23 @@ export class CollisionIndex {
             };
         }
 
-        return {
+        const result = {
             box: [tlX, tlY, brX, brY],
             offscreen: this.isOffscreen(tlX, tlY, brX, brY)
         };
+
+        const placeCollisionBoxEnd = window.performance.now();
+        const spent = placeCollisionBoxEnd - placeCollisionBoxStart;
+        const traceKey = 'placeCollisionBoxTrace';
+        let trace = window[traceKey];
+
+        if (!trace) {
+            trace = window[traceKey] = [];
+        }
+
+        trace.push(spent);
+
+        return result;
     }
 
     placeCollisionCircles(
