@@ -482,6 +482,8 @@ export class Map extends Camera {
     _maxCanvasSize: [number, number];
     _terrainDataCallback: (e: MapStyleDataEvent | MapSourceDataEvent) => void;
 
+    _frameTrace : {start: number; end: number}[] = [];
+
     /**
      * @internal
      * image queue throttling handle. To be used later when clean up
@@ -693,6 +695,10 @@ export class Map extends Camera {
         });
         this.on('dataabort', (event: MapDataEvent) => {
             this.fire(new Event('sourcedataabort', event));
+        });
+
+        this.once('idle', () => {
+            this.dumpStats();
         });
     }
 
@@ -3188,9 +3194,12 @@ export class Map extends Camera {
         if (this.style && !this._frameRequest) {
             this._frameRequest = new AbortController();
             browser.frameAsync(this._frameRequest).then((paintStartTimeStamp: number) => {
+                const frameStart = window.performance.now();
                 PerformanceUtils.frame(paintStartTimeStamp);
                 this._frameRequest = null;
                 this._render(paintStartTimeStamp);
+                const frameEnd = window.performance.now();
+                this._frameTrace.push({start: frameStart, end: frameEnd});
             }).catch(() => {}); // ignore abort error
         }
     }
@@ -3295,5 +3304,24 @@ export class Map extends Camera {
      */
     getCameraTargetElevation(): number {
         return this.transform.elevation;
+    }
+
+    dumpStats():void {
+        const totalFrames = this._frameTrace.length;
+
+        let frameLengthTotal = 0;
+        let frameGapTotal = 0;
+        for (let i = 0; i < totalFrames; i++) {
+            const frame = this._frameTrace[i];
+            if (i > 0) {
+                frameGapTotal += frame.start - this._frameTrace[i - 1].end;
+            }
+            frameLengthTotal += frame.end - frame.start;
+        }
+
+        const frameLengthAvg = (frameLengthTotal / totalFrames).toFixed(2);
+        const frameGapAvg = (frameGapTotal / (totalFrames - 1)).toFixed(2);
+
+        console.log('Total frames:', totalFrames, ', Avg length:', frameLengthAvg, ', Avg gap:', frameGapAvg);
     }
 }
