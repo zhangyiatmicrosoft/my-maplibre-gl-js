@@ -108,6 +108,7 @@ export class CollisionIndex {
         getElevation?: (x: number, y: number) => number,
         shift?: Point
     ): PlacedBox {
+        const placeCollisionBoxStart = window.performance.now();
         const x = collisionBox.anchorPointX + translation[0];
         const y = collisionBox.anchorPointY + translation[1];
         const projectedPoint = this.projectAndGetPerspectiveRatio(
@@ -144,11 +145,24 @@ export class CollisionIndex {
             };
         }
 
-        return {
+        const result = {
             box: [tlX, tlY, brX, brY],
             placeable: true,
             offscreen: this.isOffscreen(tlX, tlY, brX, brY)
         };
+
+        const placeCollisionBoxEnd = window.performance.now();
+        const spent = placeCollisionBoxEnd - placeCollisionBoxStart;
+        const traceKey = 'placeCollisionBoxTrace';
+        let trace = window[traceKey];
+
+        if (!trace) {
+            trace = window[traceKey] = [];
+        }
+
+        trace.push(spent);
+
+        return result;
     }
 
     placeCollisionCircles(
