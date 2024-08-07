@@ -3311,17 +3311,33 @@ export class Map extends Camera {
 
         let frameLengthTotal = 0;
         let frameGapTotal = 0;
+        const frameSpread = [];
+        let frameMax = 0;
+        let frameMin = Infinity;
         for (let i = 0; i < totalFrames; i++) {
             const frame = this._frameTrace[i];
             if (i > 0) {
                 frameGapTotal += frame.start - this._frameTrace[i - 1].end;
             }
-            frameLengthTotal += frame.end - frame.start;
+            const frameLength = Math.round(frame.end - frame.start);
+            frameSpread.push(frameLength);
+            if (frameLength > frameMax) {
+                frameMax = frameLength;
+            }
+            if (frameLength < frameMin) {
+                frameMin = frameLength;
+            }
+            frameLengthTotal += frameLength;
         }
 
-        const frameLengthAvg = (frameLengthTotal / totalFrames).toFixed(2);
-        const frameGapAvg = (frameGapTotal / (totalFrames - 1)).toFixed(2);
+        const frameLengthAvg = (frameLengthTotal / totalFrames).toFixed(1);
+        const frameGapAvg = (frameGapTotal / (totalFrames - 1)).toFixed(1);
 
-        console.log('Total frames:', totalFrames, ', Avg length:', frameLengthAvg, ', Avg gap:', frameGapAvg);
+        console.log('Total:', totalFrames, ', Avg length:', frameLengthAvg,
+            ', max=', frameMax,
+            ', min=', frameMin,
+            ', Avg gap:', frameGapAvg);
+
+        console.log('Spread:', frameSpread);
     }
 }
