@@ -108,37 +108,54 @@ export class CollisionIndex {
         getElevation?: (x: number, y: number) => number,
         shift?: Point
     ): PlacedBox {
-        const x = collisionBox.anchorPointX + translation[0];
-        const y = collisionBox.anchorPointY + translation[1];
-        const projectedPoint = this.projectAndGetPerspectiveRatio(
-            posMatrix,
-            x,
-            y,
-            unwrappedTileID,
-            getElevation
-        );
+        // const x = collisionBox.anchorPointX + translation[0];
+        // const y = collisionBox.anchorPointY + translation[1];
+        // const projectedPoint = this.projectAndGetPerspectiveRatio(
+        //     posMatrix,
+        //     x,
+        //     y,
+        //     unwrappedTileID,
+        //     getElevation
+        // );
 
-        const projectedBox = this._projectCollisionBox(
-            collisionBox,
-            textPixelRatio,
-            posMatrix,
-            unwrappedTileID,
-            pitchWithMap,
-            rotateWithMap,
-            translation,
-            projectedPoint,
-            getElevation,
-            shift
-        );
+        // const projectedBox = this._projectCollisionBox(
+        //     collisionBox,
+        //     textPixelRatio,
+        //     posMatrix,
+        //     unwrappedTileID,
+        //     pitchWithMap,
+        //     rotateWithMap,
+        //     translation,
+        //     projectedPoint,
+        //     getElevation,
+        //     shift
+        // );
 
-        const [tlX, tlY, brX, brY] = projectedBox.box;
+        // const [tlX, tlY, brX, brY] = projectedBox.box;
 
-        const projectionOccluded = this.mapProjection.useSpecialProjectionForSymbols ? (pitchWithMap ? projectedBox.allPointsOccluded : this.mapProjection.isOccluded(x, y, unwrappedTileID)) : false;
+        // const projectionOccluded = this.mapProjection.useSpecialProjectionForSymbols ? (pitchWithMap ? projectedBox.allPointsOccluded : this.mapProjection.isOccluded(x, y, unwrappedTileID)) : false;
 
-        if (projectionOccluded || projectedPoint.perspectiveRatio < this.perspectiveRatioCutoff || !this.isInsideGrid(tlX, tlY, brX, brY) ||
-            (overlapMode !== 'always' && this.grid.hitTest(tlX, tlY, brX, brY, overlapMode, collisionGroupPredicate))) {
+        // if (projectionOccluded || projectedPoint.perspectiveRatio < this.perspectiveRatioCutoff || !this.isInsideGrid(tlX, tlY, brX, brY) ||
+        //     (overlapMode !== 'always' && this.grid.hitTest(tlX, tlY, brX, brY, overlapMode, collisionGroupPredicate))) {
+        //     return {
+        //         box: [tlX, tlY, brX, brY],
+        //         placeable: false,
+        //         offscreen: false
+        //     };
+        // }
+
+        const projectedPoint = this.projectAndGetPerspectiveRatio(posMatrix, collisionBox.anchorPointX, collisionBox.anchorPointY, unwrappedTileID, getElevation);
+        const tileToViewport = textPixelRatio * projectedPoint.perspectiveRatio;
+        const tlX = collisionBox.x1 * tileToViewport + projectedPoint.point.x;
+        const tlY = collisionBox.y1 * tileToViewport + projectedPoint.point.y;
+        const brX = collisionBox.x2 * tileToViewport + projectedPoint.point.x;
+        const brY = collisionBox.y2 * tileToViewport + projectedPoint.point.y;
+
+        if (!this.isInsideGrid(tlX, tlY, brX, brY) ||
+            (overlapMode !== 'always' && this.grid.hitTest(tlX, tlY, brX, brY, overlapMode, collisionGroupPredicate)) ||
+            projectedPoint.perspectiveRatio < this.perspectiveRatioCutoff) {
             return {
-                box: [tlX, tlY, brX, brY],
+                box: [],
                 placeable: false,
                 offscreen: false
             };
