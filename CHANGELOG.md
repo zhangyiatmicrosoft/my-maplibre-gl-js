@@ -10,6 +10,7 @@
 
 - Fix right-to-left layout of labels that contain characters in the Arabic Extended-B code block. ([#4536](https://github.com/maplibre/maplibre-gl-js/pull/4536))
 - Fix 3D map freezing when camera is adjusted against map bounds. ([#4537](https://github.com/maplibre/maplibre-gl-js/issues/4537))
+- Remove an unnecessary variable projectionScaling from 3 shaders. ([#4555](https://github.com/maplibre/maplibre-gl-js/issues/4555))
 - - _...Add new stuff here..._
 
 ## 4.5.2
