@@ -14,7 +14,10 @@ uniform bool u_is_size_zoom_constant;
 uniform bool u_is_size_feature_constant;
 uniform highp float u_size_t; // used to interpolate between zoom stops when size is a composite function
 uniform highp float u_size; // used when size is both zoom and feature constant
+
 uniform mat4 u_matrix;
+uniform mat4 u_matrix_adjusted; // similar to u_matrix, adjusted in CPU code to avoid branching
+
 uniform mat4 u_label_plane_matrix;
 uniform mat4 u_coord_matrix;
 uniform bool u_is_text;
@@ -26,9 +29,10 @@ uniform highp float u_camera_to_center_distance;
 uniform float u_fade_change;
 uniform vec2 u_texsize;
 uniform vec2 u_texsize_icon;
-uniform bool u_is_along_line;
-uniform bool u_is_variable_anchor;
+
 uniform vec2 u_translation;
+uniform vec2 u_translation_adjusted; // similar to u_translation, adjusted in CPU code to avoid branching
+
 uniform float u_pitched_scale;
 
 out vec4 v_data0;
@@ -109,14 +113,7 @@ void main() {
     highp float angle_cos = cos(segment_angle + symbol_rotation);
     mat2 rotation_matrix = mat2(angle_cos, -1.0 * angle_sin, angle_sin, angle_cos);
 
-    vec4 projected_pos;
-    if (u_is_along_line || u_is_variable_anchor) {
-        projected_pos = vec4(a_projected_pos.xy, ele, 1.0);
-    } else if (u_pitch_with_map) {
-        projected_pos = u_label_plane_matrix * vec4(a_projected_pos.xy + u_translation, ele, 1.0);
-    } else {
-        projected_pos = u_label_plane_matrix * projectTileWithElevation(a_projected_pos.xy + u_translation, ele);
-    }
+    vec4 projected_pos = u_label_plane_matrix * u_matrix_adjusted * vec4(a_projected_pos.xy + u_translation_adjusted, ele, 1.0);
 
     float z = float(u_pitch_with_map) * projected_pos.z / projected_pos.w;
 
